@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\User;
 use App\Order;
+use App\User;
 use App\Extension;
 use App\UserLogin;
 use Illuminate\Http\Request;
@@ -55,13 +55,13 @@ class LoginController extends Controller
         return view(activeTemplate() . 'user.auth.login', compact('page_title'));
     }
 
-
-
     public function login(Request $request)
     {
-        // Validation
         if ($request->is('api/*')) {
-            $validator = $this->validateApiLogin($request);
+            $validator = Validator::make($request->all(), [
+                'email' => 'required|string',
+                'password' => 'required|string',
+            ]);
             if ($validator->fails()) {
                 return $this->respondWithError($validator->errors()->first());
             }
@@ -69,34 +69,33 @@ class LoginController extends Controller
             $this->validateLogin($request);
         }
 
-
-        // Captcha validation
         if (isset($request->captcha) && !captchaVerify($request->captcha, $request->captcha_secret)) {
-            return $request->is('api/*')
+             return $request->is('api/*')
                 ? $this->respondWithError("Invalid Captcha")
                 : back()->withNotify(['error', "Invalid Captcha"])->withInput();
         }
-
-        // Throttling
+        
         if ($this->hasTooManyLoginAttempts($request)) {
             $this->fireLockoutEvent($request);
+
             return $this->sendLockoutResponse($request);
         }
-
-        // Authentication attempt
+        
+        $this->incrementLoginAttempts($request);
+        
         if ($request->is('api/*')) {
             if (!User::where('email', $request->email)->exists()) {
                 return $this->respondWithError("User Not registered!");
             }
-
+            
             if (!$token = auth('user')->attempt($request->all())) {
                 return $this->respondWithError('Something went wrong!');
             }
-
+            
             $user = auth('user')->user();
             Auth::loginUsingId($user->id);
             Log::info('API User login successfully');
-
+            
             return response()->json([
                 'success' => true,
                 'access_token' => $token,
@@ -105,13 +104,24 @@ class LoginController extends Controller
                     'country_code', 'country', 'mobile', 'image', 'cover_image', 'description',
                 ]),
             ], Response::HTTP_OK);
-        }
-        // Web authentication
-        if (!$this->attemptLogin($request)) {
-            $this->incrementLoginAttempts($request);
+        } else {
+            if ($this->attemptLogin($request)) {
+                return $this->sendLoginResponse($request);
+            }
+            
+            // $this->incrementLoginAttempts($request);
             return $this->sendFailedLoginResponse($request);
         }
-        return $this->sendLoginResponse($request);
+    }
+    
+    protected function validateApiLogin(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|string',
+            'password' => 'required|string',
+        ]);
+
+        return $validator;
     }
 
     public function username()
@@ -134,35 +144,21 @@ class LoginController extends Controller
         $request->validate($validation_rule);
     }
 
-    protected function validateApiLogin(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            $this->username() => 'required|string',
-            'password' => 'required|string',
-        ]);
-
-        return $validator;
-    }
-
-
-    // public function logout()
-    // {
-    //     $this->guard()->logout();
-
-    //     request()->session()->invalidate();
-
-    //     $notify[] = ['success', 'You have been logged out.'];
-    //     return redirect()->route('user.login')->withNotify($notify);
-    // }
-
     public function logout(Request $request)
     {
         if ($request->is('api/*')) {
+            // Get the user
             $user = auth('user')->user();
-            Auth::loginUsingId($user->id);
+    
+            // Log the user out
+            auth('user')->logout();
+    
+            // Log the user in again
+            // Auth::logoutUsingId($user->id);
+    
             return $this->respondWithSuccess(null, 'Successfully logged out!');
         }
-
+        
         $this->guard()->logout();
 
         request()->session()->invalidate();
@@ -171,15 +167,12 @@ class LoginController extends Controller
         return redirect()->route('user.login')->withNotify($notify);
     }
 
-
-
     public function authenticated(Request $request, $user)
     {
         if ($user->status == 0) {
             $this->guard()->logout();
             return redirect()->route('user.login')->withErrors(['Your account has been deactivated.']);
         }
-
 
         $user = auth()->user();
         $user->tv = $user->ts == 1 ? 0 : 1;
@@ -219,4 +212,5 @@ class LoginController extends Controller
             return redirect()->route('user.home');
         }
     }
+    
 }
