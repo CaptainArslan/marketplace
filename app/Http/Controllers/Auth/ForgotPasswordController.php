@@ -75,7 +75,7 @@ class ForgotPasswordController extends Controller
 
         $userIpInfo = getIpInfo();
         $userBrowserInfo = osBrowser();
-        
+
         try {
             Mail::to($user->email)->send(new ForgetPassword($code));
         } catch (\Throwable $th) {
@@ -98,14 +98,15 @@ class ForgotPasswordController extends Controller
         return redirect()->route('user.password.code_verify')->withNotify($notify);
     }
 
-    public function codeVerify(){
+    public function codeVerify()
+    {
         $page_title = 'Account Recovery';
         $email = session()->get('pass_res_mail');
         if (!$email) {
-            $notify[] = ['error','Opps! session expired'];
+            $notify[] = ['error', 'Opps! session expired'];
             return redirect()->route('user.password.request')->withNotify($notify);
         }
-        return view(activeTemplate().'user.auth.passwords.code_verify',compact('page_title','email'));
+        return view(activeTemplate() . 'user.auth.passwords.code_verify', compact('page_title', 'email'));
     }
 
     public function verifyCode(Request $request)
@@ -157,7 +158,8 @@ class ForgotPasswordController extends Controller
         return redirect()->route('user.password.reset', $code)->withNotify($notify);
     }
 
-    public function sendEmail(Request $request){
+    public function sendEmail(Request $request)
+    {
         $validator = $validator = Validator::make($request->all(), [
             'email' => 'required|email',
         ]);
@@ -165,13 +167,13 @@ class ForgotPasswordController extends Controller
             return $this->respondWithError($validator->errors()->first());
         }
         $user = User::where('email', $request->email)->first();
-        
-        if($user){     
+
+        if ($user) {
             $userIpInfo = getIpInfo();
             $userBrowserInfo = osBrowser();
             $code = rand(100000, 9999999);
-            
-            try{
+
+            try {
                 $email = send_email($user, 'PASS_RESET_CODE', [
                     'code' => $code,
                     'operating_system' => @$userBrowserInfo['os_platform'],
@@ -179,18 +181,13 @@ class ForgotPasswordController extends Controller
                     'ip' => @$userIpInfo['ip'],
                     'time' => @$userIpInfo['time']
                 ]);
-                    
+
                 return $this->respondWithSuccess($email, 'Please check your email to get OTP! ');
-            }catch(\Exception $e){
+            } catch (\Exception $e) {
                 return $this->respondWithError('Error Occured while sending Email! ' . $e->getMessage());
             }
-    
-            
-        }else{
+        } else {
             return $this->respondWithError('User Not Found!');
         }
-
-        
     }
-
 }

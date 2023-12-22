@@ -2,42 +2,44 @@
 
 namespace App\Http\Controllers;
 
-use App\CommissionLog;
-use App\CustomCss;
-use App\CustomField;
-use App\CustomfieldItem;
-use App\CustomFieldResponse;
-use App\EmailTemplateSetting;
-use App\GeneralSetting;
-use App\Lib\GoogleAuthenticator;
-use App\Lib\StrongPassword;
-use App\Product;
-use App\Rating;
-use App\Notification;
-use App\Sell;
-use App\Subscription;
-use App\Transaction;
-
-
-use App\User;
-use App\UserSubscription;
-use App\Withdrawal;
-use App\WithdrawMethod;
-use EllipticCurve\Utils\File as UtilsFile;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Yajra\DataTables\DataTables;
-use Image;
-use stdClass;
 use Str;
 use File;
+use Image;
+use App\Sell;
+use App\User;
+use stdClass;
 use Exception;
+use App\Rating;
+use App\Product;
+use App\CustomCss;
+use App\Withdrawal;
+use App\CustomField;
+use App\Transaction;
+use App\Notification;
+use App\Subscription;
+use App\CommissionLog;
+use App\GeneralSetting;
+use App\WithdrawMethod;
+use App\CustomfieldItem;
+use App\UserSubscription;
+use App\Lib\StrongPassword;
+use App\CustomFieldResponse;
+use Illuminate\Http\Request;
+use App\EmailTemplateSetting;
+use App\Lib\GoogleAuthenticator;
+use Yajra\DataTables\DataTables;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Validator;
+use EllipticCurve\Utils\File as UtilsFile;
 
 class UserController extends Controller
 {
+
+    public $activeTemplate;
+
     public function __construct()
     {
         $this->activeTemplate = activeTemplate();
@@ -160,20 +162,39 @@ class UserController extends Controller
             $password_validation = $strongPassword->mixedCase()->letters()->numbers()->symbols();
         }
 
-        $this->validate($request, [
-            'current_password' => 'required',
-            'password' => ['required', 'confirmed', $password_validation],
-        ]);
+        if ($request->is('api/*')) {
+            $validator = Validator::make($request->all(), [
+                'current_password' => 'required',
+                'password' => 'required|string',
+            ]);
+            if ($validator->fails()) {
+                return $this->respondWithError($validator->errors()->first());
+            }
+        }  else {
+            $this->validate($request, [
+                'current_password' => 'required',
+                'password' => ['required', 'confirmed', $password_validation],
+            ]);
+        }
 
         try {
             $user = auth()->user();
+            if($request->is('api/*')){
+                $user = auth('user')->user();
+            }
             if (Hash::check($request->current_password, $user->password)) {
                 $password = Hash::make($request->password);
                 $user->password = $password;
                 $user->save();
+                if($request->is('api/*')){
+                    return $this->respondWithSuccess(null, 'Password has been updated successfully!');
+                }
                 $notify[] = ['success', 'Password Changes successfully.'];
                 return back()->withNotify($notify);
             } else {
+                if($request->is('api/*')){
+                    return $this->respondWithError('Current password does not matched!');
+                }
                 $notify[] = ['error', 'Current password not match.'];
                 return back()->withNotify($notify);
             }
@@ -492,9 +513,9 @@ class UserController extends Controller
         // dd($data);
         $empty_message = 'No data found';
         if ($request->ajax()) {
-            if($request->nid == ''){
+            if ($request->nid == '') {
                 $data = Sell::where('user_id', auth()->user()->id)->with('product', 'productcustomfields', 'customfieldresponse', 'bumpresponses');
-            }else{
+            } else {
                 $data = Sell::where('id', $request->nid)->where('user_id', auth()->user()->id)->with('product', 'productcustomfields', 'customfieldresponse', 'bumpresponses');
             }
 
@@ -543,21 +564,21 @@ class UserController extends Controller
                 })
                 ->addColumn('additionalinfo', function ($row) {
                     //if (is_null($row->product->file) || $row->product->file='') condition to be changed
-                    if ($row->productcustomfields->count() > 0 ) {
+                    if ($row->productcustomfields->count() > 0) {
                         return '<span class="badge badge--danger">Yes</span>';
                     } else {
                         return '<span class="badge badge--success">No</span>';
                     }
                 })
                 ->addColumn('createticket', function ($row) {
-                   $ticket='<a href="' . route('ticket.open',$row->product_id) . '"><i
+                    $ticket = '<a href="' . route('ticket.open', $row->product_id) . '"><i
                                 class="las la-headset fs-5 me-2"></i>Ticket Support</a>';
-                                return $ticket;
+                    return $ticket;
                 })
 
                 ->addColumn('action', function ($row) {
 
-                if ($row->status == 1) {
+                    if ($row->status == 1) {
 
                         $statusdata  = '<a href="' . route('user.download', Crypt::encrypt($row->product->id)) . '"
                                                         class="icon-btn bg--primary download-file"><i
@@ -590,13 +611,13 @@ class UserController extends Controller
                                                             data-bs-toggle="tooltip" data-bs-placement="top"
                                                             title="Message"></i></a>';
                     }
-                if (!is_null($row->product->shareable_link)) {
+                    if (!is_null($row->product->shareable_link)) {
 
-                    $statusdata  .= ' <a href="' . route('user.copyslink', Crypt::encrypt($row->product->id)) . '"
+                        $statusdata  .= ' <a href="' . route('user.copyslink', Crypt::encrypt($row->product->id)) . '"
                                                         class="icon-btn bg--primary download-file"><i
                                                             class="las la-copy" data-bs-toggle="tooltip"
                                                             data-bs-placement="top" title="CopyLink"></i></a>';
-                }
+                    }
                     return $statusdata;
                 })
                 ->rawColumns(['action', 'additionalinfo', 'bump_fee', 'support', 'support_time', 'status', 'createticket'])
@@ -661,14 +682,14 @@ class UserController extends Controller
         }
 
         $file = $product->shareable_link;
-            if (!is_null($file)) {
-                session()->put('copytext', $file);
-                $notify[] = ['success', 'Shareable link of the Product is successfully Copied'];
-                return back()->withNotify($notify);
-            } else {
+        if (!is_null($file)) {
+            session()->put('copytext', $file);
+            $notify[] = ['success', 'Shareable link of the Product is successfully Copied'];
+            return back()->withNotify($notify);
+        } else {
             $notify[] = ['error', 'No shear able link is available here'];
             return back()->withNotify($notify);
-            }
+        }
     }
 
     public function download($id)
