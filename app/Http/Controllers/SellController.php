@@ -19,6 +19,9 @@ use Illuminate\Support\Facades\Crypt;
 
 class SellController extends Controller
 {
+
+    public $activeTemplate;
+
     public function __construct()
     {
         $this->activeTemplate = activeTemplate();
@@ -26,7 +29,7 @@ class SellController extends Controller
 
     public function addToCart(Request $request)
     {
-        
+
         $apidata = [];
         $request->validate([
             'license' => 'required|numeric|in:1,2',
@@ -57,10 +60,9 @@ class SellController extends Controller
                 if ($request->is('api/*')) {
                     if ($request->has('order_number')) {
                         $orderNumber = $request->order_number;
-                       
                     } else {
                         $orderNumber = getTrx(8);
-                    
+
                         $apidata['order_number'] = $orderNumber;
                     }
                 } else {
@@ -192,7 +194,7 @@ class SellController extends Controller
         $notify[] = ['success', 'Product added to wishlist successfully'];
         return back()->withNotify($notify);
     }
-    public function carts(Request $request ,$ordernumber=null)
+    public function carts(Request $request, $ordernumber = null)
     {
         $page_title = 'Cart';
 
@@ -201,23 +203,23 @@ class SellController extends Controller
             Order::where('author_id', $user->id)->delete();
             $orders = Order::with('product')->where('order_number', $user->id)->get();
         } else {
-           
-                if ($request->is('api/*')) {
-                    if (empty($ordernumber) || is_null($ordernumber)) {
-                        $apidata['status'] = "Success";
-                        $apidata['data'] = " ";
-                        $apidata['message'] = "No Product Added";
-                    } else {
-                        $apidata['status'] = "Success";
-                        $orders = Order::with('product')->where('order_number', $ordernumber)->get();
-                      
-                        $apidata['data'] = $orders;
-                        $apidata['message'] = "Product Retrived Successfully";
-                    }
-                    return response()->json($apidata);
+
+            if ($request->is('api/*')) {
+                if (empty($ordernumber) || is_null($ordernumber)) {
+                    $apidata['status'] = "Success";
+                    $apidata['data'] = " ";
+                    $apidata['message'] = "No Product Added";
                 } else {
-                    $orders = Order::where('order_number', session()->get('order_number'))->get();
+                    $apidata['status'] = "Success";
+                    $orders = Order::with('product')->where('order_number', $ordernumber)->get();
+
+                    $apidata['data'] = $orders;
+                    $apidata['message'] = "Product Retrived Successfully";
                 }
+                return response()->json($apidata);
+            } else {
+                $orders = Order::where('order_number', session()->get('order_number'))->get();
+            }
         }
         return view($this->activeTemplate . 'cart', compact('page_title', 'orders'));
     }
@@ -251,6 +253,7 @@ class SellController extends Controller
         $notify[] = ['success', 'Product has been remove from Wishlist successfully'];
         return back()->withNotify($notify);
     }
+
     public function checkoutPayment(Request $request)
     {
         $request->validate([
@@ -264,8 +267,7 @@ class SellController extends Controller
             $orders = Order::where('order_number', $user->id)->get();
 
             if (count($orders) > 0) {
-
-                $user = auth()->user();
+                // $user = auth()->user();
                 $totalPrice = $orders->sum('total_price');
                 $gnl = GeneralSetting::first();
 
@@ -400,7 +402,6 @@ class SellController extends Controller
             if (count($orders) > 0) {
                 return redirect()->route('user.payment');
             } else {
-
                 $notify[] = ['error', 'No products in your cart.'];
                 return back()->withNotify($notify);
             }
