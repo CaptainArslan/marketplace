@@ -146,10 +146,12 @@ class RegisterController extends Controller
             $country = $countryData[$request->country_code];
         }
 
-        $request->merge([
-            'country' => $country->country,
-            'password' => base64_decode($request->password)
-        ]);
+        if ($request->is('api/*')) {
+            $request->merge([
+                'country' => $country->country,
+                'password' => base64_decode($request->password)
+            ]);
+        }
 
         event(new Registered($user = $this->create($request->all())));
 
