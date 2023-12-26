@@ -70,7 +70,7 @@ class LoginController extends Controller
         }
 
         if (isset($request->captcha) && !captchaVerify($request->captcha, $request->captcha_secret)) {
-             return $request->is('api/*')
+            return $request->is('api/*')
                 ? $this->respondWithError("Invalid Captcha")
                 : back()->withNotify(['error', "Invalid Captcha"])->withInput();
         }
@@ -94,15 +94,12 @@ class LoginController extends Controller
             
             $user = auth('user')->user();
             Auth::loginUsingId($user->id);
-            Log::info('API User login successfully');
-            
+
+
             return response()->json([
                 'success' => true,
                 'access_token' => $token,
-                'data' => $user->only([
-                    'id', 'firstname', 'lastname', 'username', 'email',
-                    'country_code', 'country', 'mobile', 'image', 'cover_image', 'description',
-                ]),
+                'data' => $user,
             ], Response::HTTP_OK);
         } else {
             if ($this->attemptLogin($request)) {

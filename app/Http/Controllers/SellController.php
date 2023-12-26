@@ -15,8 +15,10 @@ use App\GeneralSetting;
 use App\WishlistProduct;
 use App\UserSubscription;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Validator;
+use App\GatewayCurrency;
 
 class SellController extends Controller
 {
@@ -254,9 +256,9 @@ class SellController extends Controller
         $notify[] = ['success', 'Product has been remove from Wishlist successfully'];
         return back()->withNotify($notify);
     }
+    
     public function checkoutPayment(Request $request)
     {
-
         if ($request->is('api/*')) {
             $validator = Validator::make($request->all(), [
                 'wallet_type' => 'required|in:own,online',
@@ -274,166 +276,222 @@ class SellController extends Controller
 
         $user = auth()->user() ?? auth('user')->user();
 
-
         if ($request->wallet_type == 'own' && $request->subscription == 0) {
-
-            if($request->order_number){
+            if ($request->order_number) {
                 $orders = Order::where('order_number', $request->order_number)->get();
-            }else{
+            } else {
                 $orders = Order::where('order_number', $user->id)->get();
             }
 
             if (count($orders) > 0) {
-
-                $user = auth()->user();
+                // $user = auth()->user();
                 $totalPrice = $orders->sum('total_price');
                 $gnl = GeneralSetting::first();
 
-                if ($totalPrice > $user->balance) {
+                if ($totalPrice > (float) $user->balance) {
+                    if ($request->is('api/*')) {
+                        return $this->respondWithError("You do not have enough balance!");
+                    }
                     $notify[] = ['error', 'You do not have enough balance.'];
                     return back()->withNotify($notify);
                 }
 
                 if ($totalPrice <= $user->balance) {
 
-                    foreach ($orders as $item) {
-                        $sell = new Sell();
-                        $sell->code = $item->code;
-                        $sell->author_id = $item->author_id;
-                        $sell->user_id = $user->id;
-                        $sell->product_id = $item->product_id;
-                        $sell->license = $item->license;
-                        $sell->support = $item->support;
-                        $sell->support_time = $item->support_time;
-                        $sell->support_fee = $item->support_fee;
-                        $sell->product_price = $item->product_price;
-                        $sell->total_price = $item->total_price;
-                        $sell->bump_fee = $item->bump_fee;
-                        $sell->status = 1;
-                        $sell->save();
-                        if ($sell->bump_fee != 0) {
-                            $bump = BumpResponse::Where('orderr_id', $item->id);
-                            $bump->update([
-                                'sell_id' => $sell->id,
-                            ]);
+                    try {
+                        DB::beginTransaction();
+                        foreach ($orders as $item) {
+                            $sell = new Sell();
+                            $sell->code = $item->code;
+                            $sell->author_id = $item->author_id;
+                            $sell->user_id = $user->id;
+                            $sell->product_id = $item->product_id;
+                            $sell->license = $item->license;
+                            $sell->support = $item->support;
+                            $sell->support_time = $item->support_time;
+                            $sell->support_fee = $item->support_fee;
+                            $sell->product_price = $item->product_price;
+                            $sell->total_price = $item->total_price;
+                            $sell->bump_fee = $item->bump_fee;
+                            $sell->status = 1;
+                            $sell->save();
+
+                            if ($sell->bump_fee != 0) {
+                                $bump = BumpResponse::Where('orderr_id', $item->id);
+                                $bump->update([
+                                    'sell_id' => $sell->id,
+                                ]);
+                            }
+
+                            $sell->product->total_sell += 1;
+                            $sell->product->save();
+
+                            $levels = Level::get();
+                            $author = $item->author;
+
+                            $author->earning = $author->earning + ($sell->total_price - ($sell->product->category->buyer_fee + (($sell->total_price * $author->levell->product_charge) / 100)));
+                            $author->balance = $author->balance + $sell->total_price;
+
+                            $authorTransaction = new Transaction();
+                            $authorTransaction->user_id = $author->id;
+                            $authorTransaction->amount = $sell->total_price;
+                            $authorTransaction->post_balance = $author->balance;
+                            $authorTransaction->charge = 0;
+                            $authorTransaction->trx_type = '+';
+                            $authorTransaction->details = getAmount($authorTransaction->amount) . ' ' . $gnl->cur_text . ' Added with Balance For selling a product named ' . $item->product->name;
+                            $authorTransaction->trx = getTrx();
+                            $authorTransaction->save();
+
+                            $author->balance = $author->balance - ($sell->product->category->buyer_fee + (($sell->total_price * $author->levell->product_charge) / 100));
+                            $author->save();
+
+
+                            if (($author->earning >= $author->levell->earning) && ($author->earning < $levels->max('earning'))) {
+                                updateAuthorLevel($author);
+                            }
+
+                            $authorTransaction = new Transaction();
+                            $authorTransaction->user_id = $author->id;
+                            $authorTransaction->amount = $sell->product->category->buyer_fee + (($sell->total_price * $author->levell->product_charge) / 100);
+                            $authorTransaction->post_balance = $author->balance;
+                            $authorTransaction->charge = 0;
+                            $authorTransaction->trx_type = '-';
+                            $authorTransaction->details = $sell->product->category->buyer_fee + (($sell->total_price * $author->levell->product_charge) / 100) . ' ' . $gnl->cur_text . ' Charged For selling a product named ' . $item->product->name;
+                            $authorTransaction->trx = getTrx();
+                            $authorTransaction->save();
+
+                            if ($item->license == 1) {
+                                $licenseType = 'Regular';
+                            }
+                            if ($item->license == 2) {
+                                $licenseType = 'Extended';
+                            }
+
+                            // notify($author, 'PRODUCT_SOLD', [
+                            //     'product_name' => $item->product->name,
+                            //     'license' => $licenseType,
+                            //     'currency' => $gnl->cur_text,
+                            //     'product_amount' => getAmount($sell->product_price),
+                            //     'support_fee' => getAmount($sell->support_fee),
+                            //     'bump_fee' => getAmount($sell->bump_fee),
+                            //     'support_time' => $sell->support_time ? $sell->support_time : 'No support',
+                            //     'trx' => $authorTransaction->trx,
+                            //     'purchase_code' => $sell->code,
+                            //     'post_balance' => $author->balance,
+                            //     'buyer_fee' => $author->levell->product_charge,
+                            //     'amount' => $sell->total_price - ($sell->product->category->buyer_fee + (($sell->total_price * $author->levell->product_charge) / 100)),
+                            // ]);
+
                         }
-                        $sell->product->total_sell += 1;
-                        $sell->product->save();
 
-                        $levels = Level::get();
-                        $author = $item->author;
+                        $user->balance = $user->balance - $totalPrice;
+                        $user->save();
 
-                        $author->earning = $author->earning + ($sell->total_price - ($sell->product->category->buyer_fee + (($sell->total_price * $author->levell->product_charge) / 100)));
-                        $author->balance = $author->balance + $sell->total_price;
+                        $transaction = new Transaction();
+                        $transaction->user_id = $user->id;
+                        $transaction->amount = $totalPrice;
+                        $transaction->post_balance = $user->balance;
+                        $transaction->charge = 0;
+                        $transaction->trx_type = '-';
+                        $transaction->details = getAmount($totalPrice) . ' ' . $gnl->cur_text . ' Subtracted From Your Own Wallet For Purchasing Products.';
+                        $transaction->trx = getTrx();
+                        $transaction->save();
 
-                        $authorTransaction = new Transaction();
-                        $authorTransaction->user_id = $author->id;
-                        $authorTransaction->amount = $sell->total_price;
-                        $authorTransaction->post_balance = $author->balance;
-                        $authorTransaction->charge = 0;
-                        $authorTransaction->trx_type = '+';
-                        $authorTransaction->details = getAmount($authorTransaction->amount) . ' ' . $gnl->cur_text . ' Added with Balance For selling a product named ' . $item->product->name;
-                        $authorTransaction->trx = getTrx();
-                        $authorTransaction->save();
+                        $productList = '';
 
-                        $author->balance = $author->balance - ($sell->product->category->buyer_fee + (($sell->total_price * $author->levell->product_charge) / 100));
-                        $author->save();
-
-                        if (($author->earning >= $author->levell->earning) && ($author->earning < $levels->max('earning'))) {
-                            updateAuthorLevel($author);
+                        foreach ($orders as $item) {
+                            $productList .= '# ' . $item->product->name . '<br>';
                         }
 
-                        $authorTransaction = new Transaction();
-                        $authorTransaction->user_id = $author->id;
-                        $authorTransaction->amount = $sell->product->category->buyer_fee + (($sell->total_price * $author->levell->product_charge) / 100);
-                        $authorTransaction->post_balance = $author->balance;
-                        $authorTransaction->charge = 0;
-                        $authorTransaction->trx_type = '-';
-                        $authorTransaction->details = $sell->product->category->buyer_fee + (($sell->total_price * $author->levell->product_charge) / 100) . ' ' . $gnl->cur_text . ' Charged For selling a product named ' . $item->product->name;
-                        $authorTransaction->trx = getTrx();
-                        $authorTransaction->save();
+                        // notify($user, 'PRODUCT_PURCHASED', [
+                        //     'method_name' => 'Own Wallet',
+                        //     'currency' => $gnl->cur_text,
+                        //     'total_amount' => getAmount($totalPrice),
+                        //     'post_balance' => $user->balance,
+                        //     'product_list' => $productList,
+                        // ]);
 
-                        if ($item->license == 1) {
-                            $licenseType = 'Regular';
+                        foreach ($orders as $item) {
+                            $item->delete();
                         }
-                        if ($item->license == 2) {
-                            $licenseType = 'Extended';
+                        session()->forget('order_number');
+
+                        DB::commit();
+                        if ($request->is('api/*')) {
+                            return $this->respondWithSuccess(null, 'Your Order has been placed!');
                         }
 
-                        notify($author, 'PRODUCT_SOLD', [
-                            'product_name' => $item->product->name,
-                            'license' => $licenseType,
-                            'currency' => $gnl->cur_text,
-                            'product_amount' => getAmount($sell->product_price),
-                            'support_fee' => getAmount($sell->support_fee),
-                            'bump_fee' => getAmount($sell->bump_fee),
-                            'support_time' => $sell->support_time ? $sell->support_time : 'No support',
-                            'trx' => $authorTransaction->trx,
-                            'purchase_code' => $sell->code,
-                            'post_balance' => $author->balance,
-                            'buyer_fee' => $author->levell->product_charge,
-                            'amount' => $sell->total_price - ($sell->product->category->buyer_fee + (($sell->total_price * $author->levell->product_charge) / 100)),
-                        ]);
+                        return redirect()->route('user.purchased.product');
+                    } catch (\Throwable $th) {
+                        DB::rollBack();
+                        if ($request->is('api/*')) {
+                            return $this->respondWithError('Error Occured while placing order!');
+                        }
                     }
-
-                    $user->balance = $user->balance - $totalPrice;
-                    $user->save();
-
-                    $transaction = new Transaction();
-                    $transaction->user_id = $user->id;
-                    $transaction->amount = $totalPrice;
-                    $transaction->post_balance = $user->balance;
-                    $transaction->charge = 0;
-                    $transaction->trx_type = '-';
-                    $transaction->details = getAmount($totalPrice) . ' ' . $gnl->cur_text . ' Subtracted From Your Own Wallet For Purchasing Products.';
-                    $transaction->trx = getTrx();
-                    $transaction->save();
-
-                    $productList = '';
-
-                    foreach ($orders as $item) {
-                        $productList .= '# ' . $item->product->name . '<br>';
-                    }
-
-                    notify($user, 'PRODUCT_PURCHASED', [
-                        'method_name' => 'Own Wallet',
-                        'currency' => $gnl->cur_text,
-                        'total_amount' => getAmount($totalPrice),
-                        'post_balance' => $user->balance,
-                        'product_list' => $productList,
-                    ]);
-
-                    foreach ($orders as $item) {
-                        $item->delete();
-                    }
-                    session()->forget('order_number');
-
-                    return redirect()->route('user.purchased.product');
                 }
             } else {
+
+                if ($request->is('api/*')) {
+                    return $this->respondWithError('No products in your cart!');
+                }
+
                 $notify[] = ['error', 'No products in your cart.'];
                 return back()->withNotify($notify);
             }
         }
         if ($request->wallet_type == 'online' && $request->subscription == 0) {
-            $orders = Order::where('order_number', $user->id)->get();
+            if ($request->order_number) {
+                $orders = Order::where('order_number', $request->order_number)->get();
+            } else {
+                $orders = Order::where('order_number', $user->id)->get();
+            }
+
             if (count($orders) > 0) {
+                if ($request->is('api/*')) {
+                    $totalPrice = $orders->sum('total_price');
+                    $gatewayCurrency = GatewayCurrency::where('min_amount', '<', $totalPrice)->where('max_amount', '>', $totalPrice)->whereHas('method', function ($gate) {
+                        $gate->where('status', 1);
+                    })->select('id', 'name', 'currency', 'symbol', 'method_code')
+                        // ->with('method')
+                        ->orderby('method_code')->get();
+
+                    $data = [
+                        'total_price' => $totalPrice,
+                        'gateway_currency' => $gatewayCurrency
+                    ];
+                    return $this->respondWithSuccess($data, 'Checkout now!');
+                }
                 return redirect()->route('user.payment');
             } else {
-
+                if ($request->is('api/*')) {
+                    return $this->respondWithError('No products in your cart!');
+                }
+                // user .payment function
                 $notify[] = ['error', 'No products in your cart.'];
                 return back()->withNotify($notify);
             }
         }
         if ($request->wallet_type == 'own' && $request->subscription == 1) {
+            if ($request->is('api/*')) {
+                $validator = Validator::make($request->all(), [
+                    'subscription_id' => 'required|exists:subscriptions,id',
+                ]);
+                if ($validator->fails()) {
+                    return $this->respondWithError($validator->errors()->first());
+                }
+            }
             $gnl = GeneralSetting::first();
             $usersub = new UserSubscription();
-            $usersub->sub_id = $request->subscriptionid;
-            $sub = Subscription::where('id', $request->subscriptionid)->first();
-            $newchargeprice = $sub->price;
-            $subuser = UserSubscription::where('user_id', auth()->user()->id)->where('status', 1)->with('subscriptions')->first();
-            if (!is_null($subuser)) {
+            $subscription_id = $request->subscriptionid;
+            if($request->is('api/*')){
+                $subscription_id = $request->subscription_id;
+            }
 
+            $usersub->sub_id = $subscription_id;
+            $sub = Subscription::where('id', $subscription_id)->first();
+            $newchargeprice = $sub->price;
+            $subuser = UserSubscription::where('user_id', $user->id)->where('status', 1)->with('subscriptions')->first();
+            if (!is_null($subuser)) {
                 if ($subuser->subscriptions->plan_type == 1) {
                     $totaldays = Carbon::parse($subuser->expire_on)->diffInDays(Carbon::parse($subuser->start_on));
                     $remaindays = Carbon::parse($subuser->expire_on)->diffInDays(Carbon::now());
@@ -471,10 +529,45 @@ class SellController extends Controller
             $transaction->details = getAmount($newchargeprice) . ' ' . $gnl->cur_text . ' Subtracted From Your Own Wallet for the' . $detail . 'subscription Packg you buy.';
             $transaction->trx = getTrx();
             $transaction->save();
+            if ($request->is('api/*')) {
+                return $this->respondWithSuccess(null, 'Order purchased successfully!', [
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                ], 200);
+            }
+
             return redirect()->route('user.purchased.product');
         }
         if ($request->wallet_type == 'online' && $request->subscription == 1) {
-            $sub = Subscription::where('id', $request->subscriptionid)->first();
+
+            if ($request->is('api/*')) {
+                $validator = Validator::make($request->all(), [
+                    'subscription_id' => 'required|exists:subscriptions,id',
+                ]);
+                if ($validator->fails()) {
+                    return $this->respondWithError($validator->errors()->first());
+                }
+            }
+            $subscription_id = $request->subscriptionid;
+            if($request->is('api/*')){
+                $subscription_id = $request->subscription_id;
+            }
+
+            $sub = Subscription::where('id', $request->subscription_id)->first();
+
+            if ($request->is('api/*')) {
+                $subscription = Subscription::where('id', $sub->id)->first();
+                $gatewayCurrency = GatewayCurrency::where('min_amount', '<', $subscription->price)
+                    ->where('max_amount', '>', $subscription->price)
+                    ->whereHas('method', function ($gate) {
+                        $gate->where('status', 1);
+                    })
+                    ->with('method')
+                    ->orderby('method_code')
+                    ->get();
+                return $this->respondwithSuccess($gatewayCurrency, 'Checkout now!');
+            }
+
             return redirect()->route('user.subscriptionpayment', $sub->id);
         }
     }

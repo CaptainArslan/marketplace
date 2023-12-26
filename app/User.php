@@ -73,6 +73,8 @@ class User extends Authenticatable implements JWTSubject
         'provider_id'
     ];
 
+    protected $with = ['usersubscription']; 
+
     /**
      * The attributes that should be hidden for arrays.
      *
