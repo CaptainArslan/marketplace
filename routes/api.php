@@ -51,4 +51,6 @@ Route::post('test/email', 'Auth\ForgotPasswordController@sendEmail');
 Route::middleware('jwt.verify')->group(function () {
     Route::post('auth/logout', 'Auth\LoginController@logout');
     Route::post('password/change', 'UserController@submitPassword');
+
+    Route::post('checkout',  'SellController@checkoutPayment');
 });

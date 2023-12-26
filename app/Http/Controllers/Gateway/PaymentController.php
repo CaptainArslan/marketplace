@@ -22,6 +22,7 @@ use stdClass;
 
 class PaymentController extends Controller
 {
+    public $activeTemplate;
     public function __construct()
     {
         return $this->activeTemplate = activeTemplate();
@@ -157,9 +158,6 @@ class PaymentController extends Controller
             $notify[] = ['error', 'Invalid Gateway'];
             return back()->withNotify($notify);
         }
-
-
-
         $data = new Deposit();
         if ($request->subid == 0) {
             $data->order_number = $orders[0]->order_number;

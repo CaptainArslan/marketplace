@@ -2,20 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\BumpResponse;
-use App\GeneralSetting;
+use App\Sell;
 use App\Level;
 use App\Order;
 use App\Product;
-use App\ProductBump;
-use App\Sell;
-use App\Subscription;
-use App\Transaction;
-use App\UserSubscription;
-use App\WishlistProduct;
 use Carbon\Carbon;
+use App\ProductBump;
+use App\Transaction;
+use App\BumpResponse;
+use App\Subscription;
+use App\GeneralSetting;
+use App\WishlistProduct;
+use App\UserSubscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Validator;
 
 class SellController extends Controller
 {
@@ -253,21 +254,38 @@ class SellController extends Controller
         $notify[] = ['success', 'Product has been remove from Wishlist successfully'];
         return back()->withNotify($notify);
     }
-
     public function checkoutPayment(Request $request)
     {
-        $request->validate([
-            'wallet_type' => 'required|in:own,online',
-        ]);
 
-        $user = auth()->user();
+        if ($request->is('api/*')) {
+            $validator = Validator::make($request->all(), [
+                'wallet_type' => 'required|in:own,online',
+                'subscription' => 'required',
+                'order_number' => 'required',
+            ]);
+            if ($validator->fails()) {
+                return $this->respondWithError($validator->errors()->first());
+            }
+        } else {
+            $request->validate([
+                'wallet_type' => 'required|in:own,online',
+            ]);
+        }
+
+        $user = auth()->user() ?? auth('user')->user();
+
 
         if ($request->wallet_type == 'own' && $request->subscription == 0) {
 
-            $orders = Order::where('order_number', $user->id)->get();
+            if($request->order_number){
+                $orders = Order::where('order_number', $request->order_number)->get();
+            }else{
+                $orders = Order::where('order_number', $user->id)->get();
+            }
 
             if (count($orders) > 0) {
-                // $user = auth()->user();
+
+                $user = auth()->user();
                 $totalPrice = $orders->sum('total_price');
                 $gnl = GeneralSetting::first();
 
@@ -402,6 +420,7 @@ class SellController extends Controller
             if (count($orders) > 0) {
                 return redirect()->route('user.payment');
             } else {
+
                 $notify[] = ['error', 'No products in your cart.'];
                 return back()->withNotify($notify);
             }

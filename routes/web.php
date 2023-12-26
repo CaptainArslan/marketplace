@@ -566,7 +566,7 @@ Route::name('user.')->prefix('user')->group(function () {
             Route::middleware(['checkseller'])->group(function () {
                 Route::get('product/all', 'ProductController@allProduct')->name('product.all');
                 Route::get('product/new', 'ProductController@newProduct')->name('product.new');
-                 Route::get('product/get/code/{subcatid}', 'ProductController@getShortcode')->name('product.get.shortcode');
+                Route::get('product/get/code/{subcatid}', 'ProductController@getShortcode')->name('product.get.shortcode');
                 Route::get('product/customfield', 'ProductController@customfield')->name('customfield.product');
                 Route::post('product/store', 'ProductController@storeProduct')->name('product.store');
                 Route::get('product/edit/{id}', 'ProductController@editProduct')->name('product.edit');
