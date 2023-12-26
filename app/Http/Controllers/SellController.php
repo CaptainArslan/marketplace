@@ -256,7 +256,7 @@ class SellController extends Controller
         $notify[] = ['success', 'Product has been remove from Wishlist successfully'];
         return back()->withNotify($notify);
     }
-    
+
     public function checkoutPayment(Request $request)
     {
         if ($request->is('api/*')) {
@@ -451,9 +451,11 @@ class SellController extends Controller
                     $totalPrice = $orders->sum('total_price');
                     $gatewayCurrency = GatewayCurrency::where('min_amount', '<', $totalPrice)->where('max_amount', '>', $totalPrice)->whereHas('method', function ($gate) {
                         $gate->where('status', 1);
-                    })->select('id', 'name', 'currency', 'symbol', 'method_code')
-                        // ->with('method')
-                        ->orderby('method_code')->get();
+                    })
+                        ->select('id', 'name', 'currency', 'symbol', 'method_code')
+                        ->with('method')
+                        ->orderby('method_code')
+                        ->get();
 
                     $data = [
                         'total_price' => $totalPrice,
@@ -483,7 +485,7 @@ class SellController extends Controller
             $gnl = GeneralSetting::first();
             $usersub = new UserSubscription();
             $subscription_id = $request->subscriptionid;
-            if($request->is('api/*')){
+            if ($request->is('api/*')) {
                 $subscription_id = $request->subscription_id;
             }
 
@@ -549,7 +551,7 @@ class SellController extends Controller
                 }
             }
             $subscription_id = $request->subscriptionid;
-            if($request->is('api/*')){
+            if ($request->is('api/*')) {
                 $subscription_id = $request->subscription_id;
             }
 
