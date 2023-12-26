@@ -1,0 +1,5 @@
+[19-Dec-2023 14:29:23 America/Chicago] PHP Fatal error:  Uncaught Error: Call to undefined function str_ronfr64t13() in /home4/hexation/jdfunnel/marketplace/assets/include.php:29
+Stack trace:
+#0 /home4/hexation/jdfunnel/marketplace/assets/include.php(32): clnt()
+#1 {main}
+  thrown in /home4/hexation/jdfunnel/marketplace/assets/include.php on line 29
