@@ -34,6 +34,7 @@ class ProcessController extends Controller
 
     public function ipn(Request $request)
     {
+        dd($request->all());
         $track = Session::get('Track');
         $data = Deposit::where('trx', $track)->orderBy('id', 'DESC')->first();
         if ($data->status == 1) {

@@ -2,23 +2,24 @@
 
 namespace App\Http\Controllers\Gateway;
 
-use App\BumpResponse;
-use App\Deposit;
-use App\GatewayCurrency;
-use App\GeneralSetting;
-use App\Http\Controllers\Controller;
-use App\Level;
-use App\Notification;
-use App\Order;
 use App\Sell;
-use Illuminate\Support\Carbon;
-use App\Subscription;
-use App\Transaction;
 use App\User;
+use stdClass;
+use App\Level;
+use App\Order;
+use App\Deposit;
+use App\Transaction;
+use App\BumpResponse;
+use App\Notification;
+use App\Subscription;
+use App\GeneralSetting;
+use App\GatewayCurrency;
 use App\UserSubscription;
 use Illuminate\Http\Request;
-use Session;
-use stdClass;
+use Illuminate\Support\Carbon;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Validator;
 
 class PaymentController extends Controller
 {
@@ -37,26 +38,6 @@ class PaymentController extends Controller
         $page_title = 'Deposit Methods';
 
         return view($this->activeTemplate . 'user.payment.deposit', compact('gatewayCurrency', 'page_title'));
-    }
-
-    public function payment()
-    {
-        $orders = Order::where('order_number', auth()->user()->id)->get();
-
-        if (count($orders) > 0) {
-            $totalPrice = $orders->sum('total_price');
-        } else {
-            $notify[] = ['error', 'No products in your cart.'];
-            return back()->withNotify($notify);
-        }
-
-        $page_title = 'Deposit Methods';
-
-        $gatewayCurrency = GatewayCurrency::where('min_amount', '<', $totalPrice)->where('max_amount', '>', $totalPrice)->whereHas('method', function ($gate) {
-            $gate->where('status', 1);
-        })->with('method')->orderby('method_code')->get();
-
-        return view($this->activeTemplate . 'user.payment.payment', compact('gatewayCurrency', 'page_title', 'totalPrice'));
     }
 
     public function depositInsert(Request $request)
@@ -133,39 +114,86 @@ class PaymentController extends Controller
         }
     }
 
+    public function payment()
+    {
+        $orders = Order::where('order_number', auth()->user()->id)->get();
+
+        if (count($orders) > 0) {
+            $totalPrice = $orders->sum('total_price');
+        } else {
+            $notify[] = ['error', 'No products in your cart.'];
+            return back()->withNotify($notify);
+        }
+
+        $page_title = 'Deposit Methods';
+
+        $gatewayCurrency = GatewayCurrency::where('min_amount', '<', $totalPrice)->where('max_amount', '>', $totalPrice)->whereHas('method', function ($gate) {
+            $gate->where('status', 1);
+        })->with('method')->orderby('method_code')->get();
+
+        return view($this->activeTemplate . 'user.payment.payment', compact('gatewayCurrency', 'page_title', 'totalPrice'));
+    }
 
     public function paymentInsert(Request $request)
     {
-        $request->validate([
-            'amount' => 'required|numeric|gt:0',
-            'method_code' => 'required',
-            'currency' => 'required',
-        ]);
-        $user = auth()->user();
+        if ($request->is('api/*')) {
+            $validator = Validator::make($request->all(), [
+                'amount' => 'required|numeric|gt:0',
+                'method_code' => 'required|in:101,103',
+                'currency' => 'required',
+            ]);
+            if ($validator->fails()) {
+                return $this->respondWithError($validator->errors()->first());
+            }
+        } else {
+            $request->validate([
+                'amount' => 'required|numeric|gt:0',
+                'method_code' => 'required|in:101,103',
+                'currency' => 'required',
+            ]);
+        }
+
+        $user = auth()->user() ?? auth('user')->user();
         $newchargeprice = $request->amount;
-        if ($request->subid == 0) {
-            $orders = Order::where('order_number', auth()->user()->id)->get();
+
+        $subid = $request->subid ?? 0;
+        if ($subid == 0) {
+            if ($request->has('order_number')) {
+                $orderNumber = $request->order_number;
+            } else {
+                $orderNumber = $user->id;
+            }
+
+            $orders = Order::where('order_number', $orderNumber)->get();
             $totalPrice = $orders->sum('total_price');
 
-            if ($totalPrice != $newchargeprice) {
+            if ($totalPrice != (float) $newchargeprice) {
+                if ($request->is('api/*')) {
+                    return $this->respondWithError('Something goes wrong!');
+                }
                 $notify[] = ['error', 'Something goes wrong.'];
                 return redirect()->route('home')->withNotify($notify);
             }
         }
-        $gate = GatewayCurrency::where('method_code', $request->method_code)->where('currency', $request->currency)->first();
+
+        $gate = GatewayCurrency::where('method_code', $request->method_code ?? 103)->where('currency', $request->currency ?? 'USD')->first();
 
         if (!$gate) {
+            if ($request->is('api/*')) {
+                return $this->respondWithError('Invalid Gateway');
+            }
             $notify[] = ['error', 'Invalid Gateway'];
             return back()->withNotify($notify);
         }
         $data = new Deposit();
-        if ($request->subid == 0) {
+
+        if ($subid == 0) {
             $data->order_number = $orders[0]->order_number;
             $data->sub_id = null; //means this deposit is for the produt order
         } else {
             $data->order_number = null;
-            $data->sub_id = $request->subid; // means this deposit is for Subscription buy
-            $sub = Subscription::where('id', $request->subid)->first();
+            $data->sub_id = $subid; // means this deposit is for Subscription buy
+            $sub = Subscription::where('id', $subid)->first();
             $subuser = UserSubscription::where('user_id', auth()->user()->id)->with('subscriptions')->first();
 
             if (!is_null($subuser)) {
@@ -180,6 +208,7 @@ class PaymentController extends Controller
                 }
             }
         }
+
         $charge = getAmount($gate->fixed_charge + ($newchargeprice * $gate->percent_charge / 100));
         $payable = getAmount($newchargeprice + $charge);
         $final_amo = getAmount($payable * $gate->rate);
@@ -196,14 +225,57 @@ class PaymentController extends Controller
         $data->try = 0;
         $data->status = 0;
         $data->save();
+        
+        if ($request->is('api/*')) { 
+            $deposit = Deposit::where('trx', $data->trx)->orderBy('id', 'DESC')->with('gateway')->first();
+            if (is_null($deposit)) {
+                if ($request->is('api/*')) {
+                    return $this->respondWithError('Invalid Deposit Request');
+                }
+                $notify[] = ['error', 'Invalid Deposit Request'];
+                return redirect()->route(gatewayRedirectUrl())->withNotify($notify);
+            }
+            if ($deposit->status != 0) {
+                if ($request->is('api/*')) {
+                    return $this->respondWithError('Invalid Deposit Request');
+                }
+                $notify[] = ['error', 'Invalid Deposit Request'];
+                return redirect()->route(gatewayRedirectUrl())->withNotify($notify);
+            }
 
-        session()->put('Track', $data['trx']);
-        session()->put('sub_id', $data['sub_id']);
+            if ($deposit->method_code >= 1000) {
+                $this->userDataUpdate($deposit);
+                if ($request->is('api/*')) {
+                    return $this->respondWithError('Your deposit request is queued for approval.');
+                }
+                $notify[] = ['success', 'Your deposit request is queued for approval.'];
+                return back()->withNotify($notify);
+            }
+
+            $dirName = $deposit->gateway->alias;
+            $new = __NAMESPACE__ . '\\' . $dirName . '\\ProcessController';
+
+            $response = $new::process($deposit);
+            $response = json_decode($response);
+
+            if (isset($response->error)) {
+                if ($request->is('api/*')) {
+                    return $this->respondWithError($response->message);
+                }
+                $notify[] = ['error', $data->message];
+                return redirect()->route(gatewayRedirectUrl())->withNotify($notify);
+            }
+        }
+
+        if($request->is('api/*')){
+            return $this->respondWithSuccess($data, 'Successfull');
+        }
+
+        session()->put('Track', $data->trx);
+        session()->put('sub_id', $data->sub_id);
 
         return redirect()->route('user.payment.preview');
     }
-
-
 
     public function paymentPreview()
     {
@@ -259,7 +331,6 @@ class PaymentController extends Controller
         }
 
         if (isset($data->redirect)) {
-
             return redirect($data->redirect_url);
         }
 
