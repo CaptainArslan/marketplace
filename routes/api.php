@@ -57,7 +57,7 @@ Route::middleware('jwt.verify')->group(function () {
     // prefix: user
     Route::name('iframe.')->prefix('iframe')->group(function () {
         Route::get('user/dashboard', 'UserController@home')->name('api.user.dashboard');
-        Route::get('deposit/history', 'UserController@depositHistory');
+        Route::get('deposit/history', 'UserController@depositHistory')->name('api.deposit.history');
     });
 });
 // Route::get('user/auth/dashboard/', 'UserController@home')->name('api.user.home');
