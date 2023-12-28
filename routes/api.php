@@ -51,7 +51,13 @@ Route::post('test/email', 'Auth\ForgotPasswordController@sendEmail');
 Route::middleware('jwt.verify')->group(function () {
     Route::post('auth/logout', 'Auth\LoginController@logout');
     Route::post('password/change', 'UserController@submitPassword');
+    Route::post('checkout', 'SellController@checkoutPayment');
+    Route::post('checkout/process', 'Gateway\PaymentController@paymentInsert');
 
-    Route::post('checkout',  'SellController@checkoutPayment');
-    Route::post('checkout/process',  'Gateway\PaymentController@paymentInsert');
+    // prefix: user
+    Route::name('iframe.')->prefix('iframe')->group(function () {
+        Route::get('user/dashboard', 'UserController@home')->name('api.user.dashboard');
+        Route::get('deposit/history', 'UserController@depositHistory');
+    });
 });
+// Route::get('user/auth/dashboard/', 'UserController@home')->name('api.user.home');
