@@ -1,21 +1,20 @@
 <?php
 
+use App\User;
+use App\Level;
+use App\GhlAuth;
+use App\Product;
 use App\Category;
 use App\CustomCss;
-use App\GeneralSetting;
-use App\GhlAuth;
-use App\Level;
-use App\Product;
 use App\SubCategory;
-use App\User;
-use Illuminate\Pagination\LengthAwarePaginator;
+use App\GeneralSetting;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Facades\Image;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
+use Illuminate\Support\Facades\Crypt;
+use Intervention\Image\Facades\Image;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 function sidebarVariation()
 {
@@ -516,7 +515,8 @@ function getImage($image, $size = null)
         return route('placeholderImage', $size);
     }
 }
-function getnotifycount(){
+function getnotifycount()
+{
     $notifycount = App\Notification::where('user_id', auth()->user()->id)
         ->where('mark_read', 0)
         ->where(function ($query) {
@@ -524,8 +524,7 @@ function getnotifycount(){
         })
         ->count();
     session()->put('pcount', $notifycount);
-        return $notifycount;
-
+    return $notifycount;
 }
 function findcustomemail($pid)
 {
@@ -1404,6 +1403,52 @@ function ghl_token($request, $type = '')
 
 function getscript($gen)
 {
-
     return $gen->suggestion_box;
+}
+
+function generateSSOUrl($base_url, $secret, $id)
+{
+    // dd($base_url, $secret, $id);
+    $signature = hash_hmac('sha256', $base_url, $secret);
+    $signature = $signature . '.' . $id;
+    $sso_url = "{$base_url}?signature={$signature}";
+
+    return $sso_url;
+}
+
+function verifySOSignature($ssoUrl, $secret)
+{
+    // Parse the SSO URL
+    list($base_url, $providedSignature) = explode('?signature=', $ssoUrl, 2);
+
+    $testSignature = hash_hmac('sha256', $base_url, $secret);
+
+    // Check if the provided signature matches the calculated signature
+    return hash_equals($testSignature, $providedSignature);
+}
+
+function getLastPartWithoutDots($inputString)
+{
+    $parts = explode('.', $inputString);
+
+    if (count($parts) === 2) {
+        return $parts[1];
+    }
+    return null;
+}
+
+// app/helpers.php
+
+if (!function_exists('extractBearerToken')) {
+    function extractBearerToken($authorizationHeader)
+    {
+        // Check if the header starts with 'Bearer '
+        if (strpos($authorizationHeader, 'Bearer ') === 0) {
+            // Remove 'Bearer ' and any leading/trailing spaces
+            return trim(substr($authorizationHeader, 7));
+        }
+
+        // If the header does not start with 'Bearer ', return null or handle accordingly
+        return null;
+    }
 }
