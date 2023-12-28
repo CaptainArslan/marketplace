@@ -53,8 +53,10 @@ class AppServiceProvider extends ServiceProvider
         $viewShare['activeTemplateTrue'] = activeTemplate(true);
         $viewShare['language'] = Language::all();
         $viewShare['pages'] = Page::where('tempname',$activeTemplate)->where('slug','!=','home')->get();
+        $viewShare['partial'] = true;
 
         view()->share($viewShare);
+        
 
         view()->composer('admin.partials.sidenav', function ($view) {
             $view->with([
