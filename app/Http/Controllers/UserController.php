@@ -562,11 +562,12 @@ class UserController extends Controller
         // $data= Sell::where('user_id', auth()->user()->id)->with('product', 'productcustomfields', 'customfieldresponse', 'bumpresponses')->get();
         // dd($data);
         $empty_message = 'No data found';
+        $user = auth()->user() ?? auth('user')->user();
         if ($request->ajax()) {
             if ($request->nid == '') {
-                $data = Sell::where('user_id', auth()->user()->id)->with('product', 'productcustomfields', 'customfieldresponse', 'bumpresponses');
+                $data = Sell::where('user_id', $user->id)->with('product', 'productcustomfields', 'customfieldresponse', 'bumpresponses');
             } else {
-                $data = Sell::where('id', $request->nid)->where('user_id', auth()->user()->id)->with('product', 'productcustomfields', 'customfieldresponse', 'bumpresponses');
+                $data = Sell::where('id', $request->nid)->where('user_id', $user->id)->with('product', 'productcustomfields', 'customfieldresponse', 'bumpresponses');
             }
 
             return DataTables::of($data)
@@ -673,6 +674,11 @@ class UserController extends Controller
                 ->rawColumns(['action', 'additionalinfo', 'bump_fee', 'support', 'support_time', 'status', 'createticket'])
                 ->make(true);
         }
+
+        if(($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
+            $partial = false;
+        }
+
         return view($this->activeTemplate . 'user.product.purchased', get_defined_vars());
     }
 

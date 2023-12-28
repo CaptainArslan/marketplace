@@ -13,7 +13,9 @@
 @section('content')
     <div class="pb-100">
         <script src="https://kit.fontawesome.com/0bb027dfd0.js" crossorigin="anonymous"></script>
-        @include($activeTemplate . 'partials.dashboardHeader')
+        @if ($partial)
+            @include($activeTemplate . 'partials.dashboardHeader')
+        @endif
         <div class="dashboard-area pt-50">
             <div class="container">
                 <div class="row">

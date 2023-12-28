@@ -59,6 +59,7 @@ Route::middleware('jwt.verify')->group(function () {
         Route::get('user/dashboard', 'UserController@home')->name('api.user.dashboard');
         Route::get('deposit/history', 'UserController@depositHistory')->name('api.deposit.history');
         Route::get('transaction', 'UserController@transaction')->name('api.user.transaction');
+        Route::get('purchased-product/list/', 'UserController@purchasedProduct')->name('api.purchased.product');
     });
 });
 // Route::get('user/auth/dashboard/', 'UserController@home')->name('api.user.home');
