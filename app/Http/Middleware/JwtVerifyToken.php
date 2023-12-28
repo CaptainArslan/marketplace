@@ -20,6 +20,16 @@ class JwtVerifyToken
      */
     public function handle(Request $request, Closure $next)
     {
+        $token = isset($request->token) ? $request->token : $request->header('authorization');
+        // If token not found in headers, check in request parameters
+
+        if (empty($token)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token not found!'
+            ], 401);
+        }
+        
         try {
             JWTAuth::parseToken()->authenticate();
         } catch (Exception $e) {
