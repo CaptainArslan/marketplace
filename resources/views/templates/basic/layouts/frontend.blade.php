@@ -33,8 +33,7 @@
     <script src="https://kit.fontawesome.com/0bb027dfd0.js" crossorigin="anonymous"></script>
 
     <!-- site color -->
-    <link rel="stylesheet"
-        href="{{ asset($activeTemplateTrue . 'css/color.php?color1=' . $general->base_color . '&color2=' . $general->secondary_color) }}">
+    <link rel="stylesheet" href="{{ asset($activeTemplateTrue . 'css/color.php?color1=' . $general->base_color . '&color2=' . $general->secondary_color) }}">
 
     <style>
         .activate {
@@ -267,33 +266,38 @@
     <!-- scroll-to-top end -->
 
     <div class="page-wrapper">
-        @include($activeTemplate . 'partials.header')
+        @if ($partial)
+            @include($activeTemplate . 'partials.header')
+        @endif
+        
         @yield('content')
         @yield('customsetting')
-        @include($activeTemplate . 'partials.footer')
+
+        @if ($partial)
+            @include($activeTemplate . 'partials.footer')
+        @endif
     </div>
 
     @guest
-        @php
-            $cookie = App\Frontend::where('data_keys', 'cookie.data')->first();
-        @endphp
+    @php
+    $cookie = App\Frontend::where('data_keys', 'cookie.data')->first();
+    @endphp
 
-        @if (@$cookie->data_values->status && !session('cookie_accepted'))
-            <div class="cookie-remove">
-                <div class="cookie__wrapper">
-                    <div class="container">
-                        <div class="d-flex flex-wrap align-items-center justify-content-between">
-                            <p class="txt my-2">
-                                @php echo @$cookie->data_values->description @endphp<br>
-                                <a href="{{ @$cookie->data_values->link }}" target="_blank"
-                                    class="text--base mt-2">@lang('Read Policy')</a>
-                            </p>
-                            <button class="btn btn--base my-2 policy cookie">@lang('Accept')</button>
-                        </div>
-                    </div>
+    @if (@$cookie->data_values->status && !session('cookie_accepted'))
+    <div class="cookie-remove">
+        <div class="cookie__wrapper">
+            <div class="container">
+                <div class="d-flex flex-wrap align-items-center justify-content-between">
+                    <p class="txt my-2">
+                        @php echo @$cookie->data_values->description @endphp<br>
+                        <a href="{{ @$cookie->data_values->link }}" target="_blank" class="text--base mt-2">@lang('Read Policy')</a>
+                    </p>
+                    <button class="btn btn--base my-2 policy cookie">@lang('Accept')</button>
                 </div>
             </div>
-        @endif
+        </div>
+    </div>
+    @endif
 
     @endguest
 
@@ -312,13 +316,10 @@
     <!-- Select2 -->
     <!-- slick slider js -->
     <script src="{{ asset($activeTemplateTrue . 'js/slick.min.js') }}"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment-with-locales.min.js"
-        integrity="sha512-42PE0rd+wZ2hNXftlM78BSehIGzezNeQuzihiBCvUEB3CVxHvsShF86wBWwQORNxNINlBPuq7rG4WWhNiTVHFg=="
-        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment-with-locales.min.js" integrity="sha512-42PE0rd+wZ2hNXftlM78BSehIGzezNeQuzihiBCvUEB3CVxHvsShF86wBWwQORNxNINlBPuq7rG4WWhNiTVHFg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <!-- scroll animation -->
     <script src="{{ asset($activeTemplateTrue . 'js/wow.min.js') }}"></script>
-    <script src="https://cdn.tiny.cloud/1/uqh78k98mlo4sup356qjfnu025it3ivsd92c8d96i07rk159/tinymce/6/tinymce.min.js"
-        referrerpolicy="origin"></script>
+    <script src="https://cdn.tiny.cloud/1/uqh78k98mlo4sup356qjfnu025it3ivsd92c8d96i07rk159/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 
     <!-- dashboard custom js -->
 
@@ -327,8 +328,7 @@
     <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.0/jquery.validate.js"></script>
     <script src="https://cdn.datatables.net/1.11.4/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous">
     </script>
     <script src="https://cdn.datatables.net/1.13.3/js/jquery.dataTables.min.js"></script>
 
@@ -389,12 +389,13 @@
 
 
         });
-        @if (session('copytext'))
-            navigator.clipboard.writeText('{{ session('copytext') }}').then(function() {
-                console.log('copied');
-            }, function() {
-                console.log('failed');
-            });
+        @if(session('copytext'))
+        navigator.clipboard.writeText('{{ session('
+            copytext ') }}').then(function() {
+            console.log('copied');
+        }, function() {
+            console.log('failed');
+        });
         @endif
 
         //Send the handshake request
