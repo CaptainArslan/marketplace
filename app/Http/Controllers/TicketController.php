@@ -20,6 +20,8 @@ use Yajra\DataTables\Facades\DataTables;
 class TicketController extends Controller
 {
 
+    public $activeTemplate;
+
     public function __construct()
     {
         $this->activeTemplate = activeTemplate();
@@ -27,20 +29,21 @@ class TicketController extends Controller
     // Support Ticket
     public function supportTicket(Request $request)
     {
-        if (Auth::id() == null) {
+        $user = auth()->user() ?? auth('user')->user();
+
+        if (!isset($user) || $user->id == null) {
             abort(404);
         }
         $page_title = "Support Tickets";
         if ($request->ajax()) {
-            $data =SupportTicket::where('user_id', Auth::id())->orwhere('seller_id', Auth::id())->with('product','seller')->latest();
+            $data = SupportTicket::where('user_id', $user->id)->orwhere('seller_id', $user->id)->with('product', 'seller')->latest();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->editColumn('subject', function ($row) {
-                  $btn = '<a href="' . route('ticket.view', $row->ticket) . '" class="text--base">
+                    $btn = '<a href="' . route('ticket.view', $row->ticket) . '" class="text--base">
                                                     [Ticket ' . $row->ticket . ']';
                     if (!is_null($row->product_id)) {
-                        $btn .= '<a href="' . route('product.details', [str_slug(__($row->product->name)), $row->product_id]) . '">[' . $row->product->name . ']
-                                                        </a>';
+                        $btn .= '<a href="' . route('product.details', [str_slug(__($row->product->name)), $row->product_id]) . '">[' . $row->product->name . ']</a>';
                     }
                     $btn .= '__' . $row->subject;
                     return $btn;
@@ -48,7 +51,6 @@ class TicketController extends Controller
                 ->editColumn('last_reply', function ($row) {
                     return Carbon::parse($row->last_reply)->diffForHumans();
                 })
-
                 ->editColumn('seller_id', function ($row) {
 
                     if ($row->seller_id != 0) {
@@ -73,12 +75,15 @@ class TicketController extends Controller
                 })
                 ->addColumn('action', function ($row) {
 
-                      return '<a href="'.route('ticket.view', $row->ticket).'"class="icon-btn bg--primary"><i class="las la-desktop"></i></a>';
-
+                    return '<a href="' . route('ticket.view', $row->ticket) . '"class="icon-btn bg--primary"><i class="las la-desktop"></i></a>';
                 })
-                ->rawColumns(['action','subject', 'status'])
+                ->rawColumns(['action', 'subject', 'status'])
                 ->make(true);
         }
+        if(($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
+            $partial = false;
+        }
+
         return view($this->activeTemplate . 'user.support.index', get_defined_vars());
     }
     public function openSupportTicket($id = null)

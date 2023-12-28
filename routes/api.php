@@ -55,11 +55,12 @@ Route::middleware('jwt.verify')->group(function () {
     Route::post('checkout/process', 'Gateway\PaymentController@paymentInsert');
 
     // prefix: user
-    Route::name('iframe.')->prefix('iframe')->group(function () {
-        Route::get('user/dashboard', 'UserController@home')->name('api.user.dashboard');
-        Route::get('deposit/history', 'UserController@depositHistory')->name('api.deposit.history');
-        Route::get('transaction', 'UserController@transaction')->name('api.user.transaction');
-        Route::get('purchased-product/list/', 'UserController@purchasedProduct')->name('api.purchased.product');
+    Route::name('iframe.api.')->prefix('iframe')->group(function () {
+        Route::get('user/dashboard', 'UserController@home')->name('user.dashboard');
+        Route::get('deposit/history', 'UserController@depositHistory')->name('deposit.history');
+        Route::get('transaction', 'UserController@transaction')->name('user.transaction');
+        Route::get('purchased-product/list/', 'UserController@purchasedProduct')->name('purchased.product');
+        Route::get('ticket/', 'TicketController@supportTicket')->name('ticket');
+        Route::get('meetings/all', 'MeetingController@allMeeting')->name('meeting.all');
     });
 });
-// Route::get('user/auth/dashboard/', 'UserController@home')->name('api.user.home');

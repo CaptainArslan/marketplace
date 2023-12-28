@@ -14,6 +14,7 @@ use Yajra\DataTables\DataTables;
 
 class MeetingController extends Controller
 {
+    public $activeTemplate;
     //
     public function __construct()
     {
@@ -24,11 +25,13 @@ class MeetingController extends Controller
     {
         $page_title = 'All Meetings';
         $empty_message = 'No data found';
+
+        $user = auth()->user() ?? auth('user')->user();
         if ($request->ajax()) {
-            if (auth()->user()->seller == 1) {
-                $data = BuyerSellerMeeting::where('author_id', auth()->user()->id);
+            if ($user->seller == 1) {
+                $data = BuyerSellerMeeting::where('author_id', $user->id);
             } else {
-                $data = BuyerSellerMeeting::where('buyer_id', auth()->user()->id);
+                $data = BuyerSellerMeeting::where('buyer_id', $user->id);
             }
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -45,9 +48,9 @@ class MeetingController extends Controller
                     }
                     return $rowdata;
                 })
-                ->addColumn('action', function ($row) {
+                ->addColumn('action', function ($row) use ($user) {
                     $general = GeneralSetting::first();
-                    if (auth()->user()->seller == 0) {
+                    if ($user->seller == 0) {
                         $btn = '<td data-label="Action">
                     <a href="' . route('user.meeting.edit', $row->id) . '"
                                                         class="icon-btn bg--primary"><i class="las la-edit"
@@ -82,6 +85,11 @@ class MeetingController extends Controller
                 ->rawColumns(['action', 'status'])
                 ->make(true);
         }
+        
+        if(($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
+            $partial = false;
+        }
+
         return view($this->activeTemplate . 'user.zoommeeting.index', get_defined_vars());
     }
     public function newMeeting($id)
