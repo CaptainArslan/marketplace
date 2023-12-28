@@ -33,7 +33,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Validator;
-use EllipticCurve\Utils\File as UtilsFile;
 
 class UserController extends Controller
 {
@@ -45,10 +44,46 @@ class UserController extends Controller
         $this->activeTemplate = activeTemplate();
     }
 
-    public function home()
+    // if ($request->is('api/*') && $request->signature) {
+    //     $signature = $request->signature;
+    //     $encId = getLastPartWithoutDots($signature);
+    //     if ($encId == null) {
+    //         return $this->respondWithError('Users invalid signature!');
+    //     }
+
+    //     $decryptedId = Crypt::decryptString($encId);
+    //     $user = User::findOrFail($decryptedId);
+    //     if(!$user) {
+    //         return $this->respondWithError('unauthorized!');
+    //     }
+    //     auth()->login($user);
+
+    //     $parts = explode('.', $signature);
+
+    //     $signature = $parts[0];
+
+    //     // dd($signature, $request->fullUrl(), $request->query('signature'));
+
+    //     dd( $request->except('signature'));
+    //     $parts = explode('.', $request->fullUrl());
+    //     array_pop($parts);
+    //     $newBaseUrl = implode('.', $parts);
+
+    //     dd($newBaseUrl, $signature);
+
+    //     $res = verifySOSignature($newBaseUrl, $signature);
+
+    //     if (!$res) {
+    //         return $this->respondWithError('not verfied!');
+    //     } else {
+    //         dd('verified');
+    //     }
+    // }
+    public function home(Request $request, $signature = null)
     {
         $page_title = 'Dashboard';
-        $user = auth()->user();
+        $user = auth()->user() ?? auth('user')->user();
+
         $uploadedProductCount = Product::where('user_id', $user->id)->where('status', 1)->count();
         $purchasedProductCount = Sell::where('user_id', $user->id)->where('status', 1)->count();
         $transactionCount = Transaction::where('user_id', $user->id)->count();
@@ -67,6 +102,16 @@ class UserController extends Controller
 
         $thisMonthRealeased = $user->products()->whereMonth('created_at', now())->where('status', 1)->count();
         $thisMonthPurchased = $user->buy()->whereMonth('created_at', now())->where('status', 1)->count();
+        // if ($request->is('api/*') && !$request->token) {
+        //     $data = [
+        //         'redirect_url' => route('iframe.api.user.dashboard', ['token' => extractBearerToken($request->header('authorization'))]),
+        //     ];
+        //     return $this->respondWithSuccess($data, 'Dashboard page loaded!');
+        // }
+
+        if(($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
+            $partial = false;
+        }
 
         return view($this->activeTemplate . 'user.dashboard', get_defined_vars());
     }
@@ -170,7 +215,7 @@ class UserController extends Controller
             if ($validator->fails()) {
                 return $this->respondWithError($validator->errors()->first());
             }
-        }  else {
+        } else {
             $this->validate($request, [
                 'current_password' => 'required',
                 'password' => ['required', 'confirmed', $password_validation],
@@ -179,20 +224,20 @@ class UserController extends Controller
 
         try {
             $user = auth()->user();
-            if($request->is('api/*')){
+            if ($request->is('api/*')) {
                 $user = auth('user')->user();
             }
             if (Hash::check($request->current_password, $user->password)) {
                 $password = Hash::make($request->password);
                 $user->password = $password;
                 $user->save();
-                if($request->is('api/*')){
+                if ($request->is('api/*')) {
                     return $this->respondWithSuccess(null, 'Password has been updated successfully!');
                 }
                 $notify[] = ['success', 'Password Changes successfully.'];
                 return back()->withNotify($notify);
             } else {
-                if($request->is('api/*')){
+                if ($request->is('api/*')) {
                     return $this->respondWithError('Current password does not matched!');
                 }
                 $notify[] = ['error', 'Current password not match.'];
