@@ -448,21 +448,31 @@ class SellController extends Controller
 
             if (count($orders) > 0) {
                 if ($request->is('api/*')) {
+                    $publishable_keys = []; // Initialize as an array
                     $totalPrice = $orders->sum('total_price');
-                    $gatewayCurrency = GatewayCurrency::where('min_amount', '<', $totalPrice)->where('max_amount', '>', $totalPrice)->whereHas('method', function ($gate) {
-                        $gate->where('status', 1);
-                    })
-                        ->select('id', 'name', 'currency', 'symbol', 'method_code')
-                        ->with('method')
-                        ->orderby('method_code')
+                    $gatewayCurrency = GatewayCurrency::where('min_amount', '<', $totalPrice)
+                        // ->select('id', 'name', 'method')
+                        ->where('max_amount', '>', $totalPrice)
+                        ->whereHas('method', function ($gate) {
+                            $gate->where('status', 1);
+                        })
+                        // ->with('method')
+                        ->orderBy('method_code')
                         ->get();
+
+                    foreach ($gatewayCurrency as $gate) {
+                        $parameter = json_decode($gate->gateway_parameter, true);
+                        $publishable_keys[$gate->gateway_alias] = $parameter['publishable_key'] ?? null;
+                    }
 
                     $data = [
                         'total_price' => $totalPrice,
-                        'gateway_currency' => $gatewayCurrency
+                        'gateway_currency' => $gatewayCurrency,
+                        'publishable_keys' => $publishable_keys, // Use the collected array
                     ];
                     return $this->respondWithSuccess($data, 'Checkout now!');
                 }
+
                 return redirect()->route('user.payment');
             } else {
                 if ($request->is('api/*')) {

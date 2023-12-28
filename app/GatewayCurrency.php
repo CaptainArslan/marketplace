@@ -9,6 +9,8 @@ class GatewayCurrency extends Model
     protected $casts = ['status' => 'boolean'];
     protected $guarded = ['id'];
 
+    protected $hidden = ['gateway_parameter'];
+
     // Relation
     public function method()
     {

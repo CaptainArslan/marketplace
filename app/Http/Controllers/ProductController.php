@@ -27,6 +27,8 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
+    public $activeTemplate;
+
     public function __construct()
     {
         $this->activeTemplate = activeTemplate();
@@ -814,11 +816,13 @@ public function getShortcode($id){
     }
     public function deleteProduct(Request $request)
     {
+
         $request->validate([
             'product_id' => 'required'
         ]);
 
         $product = Product::findOrFail(Crypt::decrypt($request->product_id));
+        dd($product->toArray());
 
         $product->status = 4;
         $product->save();
