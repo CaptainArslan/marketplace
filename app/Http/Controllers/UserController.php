@@ -794,8 +794,9 @@ class UserController extends Controller
         $page_title = 'Transaction Logs';
         // $transactions = Transaction::where('user_id', Auth::id())->orderBy('id', 'desc');
         $empty_message = 'No transactions.';
+        $user = auth()->user() ?? auth('user')->user();
         if ($request->ajax()) {
-            $data = Transaction::where('user_id', Auth::id())->orderBy('id', 'desc')->latest();
+            $data = Transaction::where('user_id', $user->id)->orderBy('id', 'desc')->latest();
             return DataTables::of($data)
                 ->addIndexColumn()
 
@@ -812,16 +813,19 @@ class UserController extends Controller
                     }
                 })
                 ->editColumn('charge', function ($row) {
-
                     return getAmount($row->amount) . "" . currsym();
                 })
                 ->editColumn('post_balance', function ($row) {
-
                     return getAmount($row->post_balance) . "" . currsym();
                 })
                 ->rawColumns(['amount'])
                 ->make(true);
         }
+
+        if(($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
+            $partial = false;
+        }
+
         return view($this->activeTemplate . 'user.transaction', get_defined_vars());
     }
 

@@ -89,7 +89,7 @@ class LoginController extends Controller
             }
             
             if (!$token = auth('user')->attempt($request->all())) {
-                return $this->respondWithError('Something went wrong!');
+                return $this->respondWithError('Invalid credentials!');
             }
             
             $user = auth('user')->user();
