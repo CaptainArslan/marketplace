@@ -468,7 +468,7 @@ class SellController extends Controller
                     $data = [
                         'total_price' => $totalPrice,
                         'gateway_currency' => $gatewayCurrency,
-                        'publishable_keys' => $publishable_keys, // Use the collected array
+                        // 'publishable_keys' => $publishable_keys, // Use the collected array
                     ];
                     return $this->respondWithSuccess($data, 'Checkout now!');
                 }

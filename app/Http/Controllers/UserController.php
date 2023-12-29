@@ -117,10 +117,11 @@ class UserController extends Controller
 
     public function profile(Request $request)
     {
-
+        
         $data['page_title'] = "Profile Setting";
         $data['user'] = auth()->user() ?? auth('user')->user();
-        if ($request->is('api/*')) {
+        $data['user']->base_url = url('/assets/images/user/profile/');
+        if($request->is('api/*')) {
             return $this->respondWithSuccess($data['user'], 'User Profile');
         }
         return view($this->activeTemplate . 'user.profile-setting', $data);

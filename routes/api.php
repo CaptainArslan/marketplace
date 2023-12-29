@@ -51,8 +51,11 @@ Route::post('test/email', 'Auth\ForgotPasswordController@sendEmail');
 Route::middleware('jwt.verify')->group(function () {
     Route::post('auth/logout', 'Auth\LoginController@logout');
     Route::post('password/change', 'UserController@submitPassword');
+
     Route::post('checkout', 'SellController@checkoutPayment');
     Route::post('checkout/process', 'Gateway\PaymentController@paymentInsert');
+    Route::post('payment/process', 'Gateway\stripe\ProcessController@ipnApi');
+
     Route::get('profile/setting', 'UserController@profile');
     Route::post('profile-setting', 'UserController@submitProfile');
 
@@ -61,8 +64,8 @@ Route::middleware('jwt.verify')->group(function () {
         Route::get('user/dashboard', 'UserController@home')->name('user.dashboard');
         Route::get('deposit/history', 'UserController@depositHistory')->name('deposit.history');
         Route::get('transaction', 'UserController@transaction')->name('user.transaction');
-        Route::get('purchased-product/list/', 'UserController@purchasedProduct')->name('purchased.product');
-        Route::get('ticket/', 'TicketController@supportTicket')->name('ticket');
+        Route::get('purchased-product/list', 'UserController@purchasedProduct')->name('purchased.product');
+        Route::get('ticket', 'TicketController@supportTicket')->name('ticket');
         Route::get('meetings/all', 'MeetingController@allMeeting')->name('meeting.all');
     });
 });

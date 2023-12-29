@@ -169,18 +169,19 @@ class PaymentController extends Controller
 
             if ($totalPrice != (float) $newchargeprice) {
                 if ($request->is('api/*')) {
-                    return $this->respondWithError('Something goes wrong!');
+                    return $this->respondWithError('Something went wrong!');
                 }
-                $notify[] = ['error', 'Something goes wrong.'];
+                $notify[] = ['error', 'Something went wrong.'];
                 return redirect()->route('home')->withNotify($notify);
             }
         }
 
         $gate = GatewayCurrency::where('method_code', $request->method_code ?? 103)->where('currency', $request->currency ?? 'USD')->first();
+        $gateway =json_decode($gate->gateway_parameter, true);
 
         if (!$gate) {
             if ($request->is('api/*')) {
-                return $this->respondWithError('Invalid Gateway');
+                return $this->respondWithError('Invalid Gateway!');
             }
             $notify[] = ['error', 'Invalid Gateway'];
             return back()->withNotify($notify);
@@ -209,6 +210,7 @@ class PaymentController extends Controller
             }
         }
 
+
         $charge = getAmount($gate->fixed_charge + ($newchargeprice * $gate->percent_charge / 100));
         $payable = getAmount($newchargeprice + $charge);
         $final_amo = getAmount($payable * $gate->rate);
@@ -228,21 +230,13 @@ class PaymentController extends Controller
         
         if ($request->is('api/*')) { 
             $deposit = Deposit::where('trx', $data->trx)->orderBy('id', 'DESC')->with('gateway')->first();
-            if (is_null($deposit)) {
+            if (is_null($deposit) || $deposit->status != 0) {
                 if ($request->is('api/*')) {
-                    return $this->respondWithError('Invalid Deposit Request');
+                    return $this->respondWithError('Invalid Deposit Request!');
                 }
                 $notify[] = ['error', 'Invalid Deposit Request'];
                 return redirect()->route(gatewayRedirectUrl())->withNotify($notify);
             }
-            if ($deposit->status != 0) {
-                if ($request->is('api/*')) {
-                    return $this->respondWithError('Invalid Deposit Request');
-                }
-                $notify[] = ['error', 'Invalid Deposit Request'];
-                return redirect()->route(gatewayRedirectUrl())->withNotify($notify);
-            }
-
             if ($deposit->method_code >= 1000) {
                 $this->userDataUpdate($deposit);
                 if ($request->is('api/*')) {
@@ -268,7 +262,12 @@ class PaymentController extends Controller
         }
 
         if($request->is('api/*')){
-            return $this->respondWithSuccess($data, 'Successfull');
+            $res = [
+                'track' => $data->trx,
+                'order' => $data,
+                'publishable_key' => $gateway['publishable_key'] ?? null,
+            ];
+            return $this->respondWithSuccess($res, 'Successfull');
         }
 
         session()->put('Track', $data->trx);
@@ -345,12 +344,13 @@ class PaymentController extends Controller
         return view($this->activeTemplate . $data->view, compact('data', 'page_title', 'deposit'));
     }
 
-    public static function userDataUpdate($trx)
+    public static function userDataUpdate($trx, $api = false)
     {
-
         $general = GeneralSetting::first();
         $data = Deposit::where('trx', $trx)->first();
         $user = User::find($data->user_id);
+
+        // dd($data->order_number, $data->sub_id);
 
         if (is_null($data->order_number) && is_null($data->sub_id)) {
 
@@ -377,17 +377,17 @@ class PaymentController extends Controller
                     levelCommission($user->id, $data->amount, $commissionType);
                 }
 
-                notify($user, 'DEPOSIT_COMPLETE', [
-                    'method_name' => $data->gateway_currency()->name,
-                    'method_currency' => $data->method_currency,
-                    'method_amount' => getAmount($data->final_amo),
-                    'amount' => getAmount($data->amount),
-                    'charge' => getAmount($data->charge),
-                    'currency' => $general->cur_text,
-                    'rate' => getAmount($data->rate),
-                    'trx' => $data->trx,
-                    'post_balance' => getAmount($user->balance),
-                ]);
+                // notify($user, 'DEPOSIT_COMPLETE', [
+                //     'method_name' => $data->gateway_currency()->name,
+                //     'method_currency' => $data->method_currency,
+                //     'method_amount' => getAmount($data->final_amo),
+                //     'amount' => getAmount($data->amount),
+                //     'charge' => getAmount($data->charge),
+                //     'currency' => $general->cur_text,
+                //     'rate' => getAmount($data->rate),
+                //     'trx' => $data->trx,
+                //     'post_balance' => getAmount($user->balance),
+                // ]);
             }
         }
         if (is_null($data->order_number) && !is_null($data->sub_id)) {
@@ -443,19 +443,20 @@ class PaymentController extends Controller
             $notification->subs_status = $data->sub_id;
             $notification->save();
 
-            notify($user, 'SUBSCRIPTION_PURCHASED', [
-                'pack_name' => $sub->name,
-                'plan_type' => $detail,
-                'currency' => $gnl->cur_text,
-                'pack_amount' => getAmount($sub->price),
-                'product_allowed' => $sub->allowed_product,
-                'trx' => $transaction->trx,
-            ]);
+            // notify($user, 'SUBSCRIPTION_PURCHASED', [
+            //     'pack_name' => $sub->name,
+            //     'plan_type' => $detail,
+            //     'currency' => $gnl->cur_text,
+            //     'pack_amount' => getAmount($sub->price),
+            //     'product_allowed' => $sub->allowed_product,
+            //     'trx' => $transaction->trx,
+            // ]);
         }
-
         if (!is_null($data->order_number) && is_null($data->sub_id)) {
 
-            $orders = Order::where('order_number', auth()->user()->id)->get();
+            $user = auth()->user() ?? auth('user')->user();
+
+            $orders = Order::where('order_number', $user ->id)->get();
 
             if (count($orders) > 0) {
 
@@ -549,20 +550,20 @@ class PaymentController extends Controller
                         $licenseType = 'Extended';
                     }
 
-                    notify($author, 'PRODUCT_SOLD', [
-                        'product_name' => $item->product->name,
-                        'license' => $licenseType,
-                        'currency' => $gnl->cur_text,
-                        'product_amount' => getAmount($sell->product_price),
-                        'support_fee' => getAmount($sell->support_fee),
-                        'bump_fee' => getAmount($sell->bump_fee),
-                        'support_time' => $sell->support_time ? $sell->support_time : 'No support',
-                        'trx' => $authorTransaction->trx,
-                        'purchase_code' => $sell->code,
-                        'post_balance' => getAmount($author->balance),
-                        'buyer_fee' => $author->levell->product_charge,
-                        'amount' => $sell->total_price - $commission,
-                    ]);
+                    // notify($author, 'PRODUCT_SOLD', [
+                    //     'product_name' => $item->product->name,
+                    //     'license' => $licenseType,
+                    //     'currency' => $gnl->cur_text,
+                    //     'product_amount' => getAmount($sell->product_price),
+                    //     'support_fee' => getAmount($sell->support_fee),
+                    //     'bump_fee' => getAmount($sell->bump_fee),
+                    //     'support_time' => $sell->support_time ? $sell->support_time : 'No support',
+                    //     'trx' => $authorTransaction->trx,
+                    //     'purchase_code' => $sell->code,
+                    //     'post_balance' => getAmount($author->balance),
+                    //     'buyer_fee' => $author->levell->product_charge,
+                    //     'amount' => $sell->total_price - $commission,
+                    // ]);
                 }
 
                 $data->status = 1;
@@ -611,13 +612,13 @@ class PaymentController extends Controller
                         $products->supporttime = $item->support_time;
                         $products->totalprice = $item->total_price;
                         $productarray[] = $products;
-                        notify($user, 'PRODUCT_PURCHASED', [
-                            'method_name' => $data->gateway_currency()->name,
-                            'currency' => $gnl->cur_text,
-                            'total_amount' => getAmount($data->amount),
-                            'post_balance' => $user->balance,
-                            'product_list' => $productarray,
-                        ], $item->product->id);
+                        // notify($user, 'PRODUCT_PURCHASED', [
+                        //     'method_name' => $data->gateway_currency()->name,
+                        //     'currency' => $gnl->cur_text,
+                        //     'total_amount' => getAmount($data->amount),
+                        //     'post_balance' => $user->balance,
+                        //     'product_list' => $productarray,
+                        // ], $item->product->id);
                     } else {
                         $productList = '<ol>';
                         $productList .= '<ul><li>' . $item->product->name . '</li>';
@@ -634,20 +635,22 @@ class PaymentController extends Controller
                         $productList .= '<li>' . $item->total_price . '</li></ul>';
                         $productList .= '</ol>';
                     }
-                    notify($user, 'PRODUCT_PURCHASED', [
-                        'method_name' => $data->gateway_currency()->name,
-                        'currency' => $gnl->cur_text,
-                        'total_amount' => getAmount($data->amount),
-                        'post_balance' => $user->balance,
-                        'product_list' => $productList,
-                    ]);
+                    // notify($user, 'PRODUCT_PURCHASED', [
+                    //     'method_name' => $data->gateway_currency()->name,
+                    //     'currency' => $gnl->cur_text,
+                    //     'total_amount' => getAmount($data->amount),
+                    //     'post_balance' => $user->balance,
+                    //     'product_list' => $productList,
+                    // ]);
                 }
-
 
                 foreach ($orders as $item) {
-                    $item->delete();
+                    dd($item->delete());
                 }
 
+                if($api == true){
+                    return $this->respondWithSuccess(null, 'Product is Successfully Purchased.');
+                }
 
                 session()->forget('order_number');
                 session()->forget('cartCount');
@@ -655,6 +658,9 @@ class PaymentController extends Controller
 
                 return redirect()->route('user.purchased.product')->withNotify($notify);
             } else {
+                if($api == true){
+                    return $this->responsdwithError('No products in your cart.');
+                }
                 $notify[] = ['error', 'No products in your cart.'];
                 return back()->withNotify($notify);
             }
