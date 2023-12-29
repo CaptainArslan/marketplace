@@ -16,7 +16,6 @@ use App\Withdrawal;
 use App\CustomField;
 use App\Transaction;
 use App\Notification;
-use App\Subscription;
 use App\CommissionLog;
 use App\GeneralSetting;
 use App\WithdrawMethod;
@@ -109,38 +108,62 @@ class UserController extends Controller
         //     return $this->respondWithSuccess($data, 'Dashboard page loaded!');
         // }
 
-        if(($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
+        if (($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
             $partial = false;
         }
 
         return view($this->activeTemplate . 'user.dashboard', get_defined_vars());
     }
 
-    public function profile()
+    public function profile(Request $request)
     {
+
         $data['page_title'] = "Profile Setting";
-        $data['user'] = Auth::user();
+        $data['user'] = auth()->user() ?? auth('user')->user();
+        if ($request->is('api/*')) {
+            return $this->respondWithSuccess($data['user'], 'User Profile');
+        }
         return view($this->activeTemplate . 'user.profile-setting', $data);
     }
 
     public function submitProfile(Request $request)
     {
-        $request->validate([
-            'firstname' => 'required|string|max:50',
-            'lastname' => 'required|string|max:50',
-            'address' => "sometimes|required|max:80",
-            'state' => 'sometimes|required|max:80',
-            'zip' => 'sometimes|required|max:40',
-            'city' => 'sometimes|required|max:50',
-            'image' => 'mimes:png,jpg,jpeg',
-            'logoimage' => 'mimes:png',
-            'cover_image' => 'mimes:png,jpg,jpeg',
-        ], [
-            'firstname.required' => 'First Name Field is required',
-            'lastname.required' => 'Last Name Field is required',
-        ]);
+        if ($request->is('api/*')) {
+            $validator = Validator::make($request->all(), [
+                'firstname' => 'required|string|max:50',
+                'lastname' => 'required|string|max:50',
+                'address' => "sometimes|required|max:80",
+                'state' => 'sometimes|required|max:80',
+                'zip' => 'sometimes|required|max:40',
+                'city' => 'sometimes|required|max:50',
+                'image' => 'mimes:png,jpg,jpeg',
+                'logoimage' => 'mimes:png',
+                'cover_image' => 'mimes:png,jpg,jpeg',
+            ], [
+                'firstname.required' => 'First Name Field is required',
+                'lastname.required' => 'Last Name Field is required',
+            ]);
+            if ($validator->fails()) {
+                return $this->respondWithError($validator->errors()->first());
+            }
+        } else {
+            $request->validate([
+                'firstname' => 'required|string|max:50',
+                'lastname' => 'required|string|max:50',
+                'address' => "sometimes|required|max:80",
+                'state' => 'sometimes|required|max:80',
+                'zip' => 'sometimes|required|max:40',
+                'city' => 'sometimes|required|max:50',
+                'image' => 'mimes:png,jpg,jpeg',
+                'logoimage' => 'mimes:png',
+                'cover_image' => 'mimes:png,jpg,jpeg',
+            ], [
+                'firstname.required' => 'First Name Field is required',
+                'lastname.required' => 'Last Name Field is required',
+            ]);
+        }
 
-        $user = Auth::user();
+        $user = Auth::user() ?? auth('user')->user();
 
         $in['firstname'] = $request->firstname;
         $user->firstname = $in['firstname'];
@@ -165,6 +188,7 @@ class UserController extends Controller
             $in['image'] = uploadImage($image, $path, $size, $user->image);
             $user->image = $in['image'];
         }
+
         if ($request->hasFile('logoimage')) {
             $image = $request->file('logoimage');
             $path = imagePath()['profile']['user']['path'];
@@ -185,7 +209,13 @@ class UserController extends Controller
                 return back()->withNotify(['error', 'Could not upload the image.']);
             }
         };
+
         $user->save();
+
+        if ($request->is('api/*')) {
+            return $this->respondWithSuccess($user, 'Profile Updated successfully!');
+        }
+
         $notify[] = ['success', 'Profile Updated successfully.'];
         return back()->withNotify($notify);
     }
@@ -293,7 +323,7 @@ class UserController extends Controller
                 ->make(true);
         }
 
-        if(($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
+        if (($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
             $partial = false;
         }
 
@@ -675,7 +705,7 @@ class UserController extends Controller
                 ->make(true);
         }
 
-        if(($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
+        if (($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
             $partial = false;
         }
 
@@ -828,7 +858,7 @@ class UserController extends Controller
                 ->make(true);
         }
 
-        if(($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
+        if (($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
             $partial = false;
         }
 

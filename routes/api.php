@@ -53,6 +53,8 @@ Route::middleware('jwt.verify')->group(function () {
     Route::post('password/change', 'UserController@submitPassword');
     Route::post('checkout', 'SellController@checkoutPayment');
     Route::post('checkout/process', 'Gateway\PaymentController@paymentInsert');
+    Route::get('profile/setting', 'UserController@profile');
+    Route::post('profile-setting', 'UserController@submitProfile');
 
     // prefix: user
     Route::name('iframe.api.')->prefix('iframe')->group(function () {
