@@ -17,9 +17,11 @@ use App\GatewayCurrency;
 use App\UserSubscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class PaymentController extends Controller
 {
@@ -177,7 +179,7 @@ class PaymentController extends Controller
         }
 
         $gate = GatewayCurrency::where('method_code', $request->method_code ?? 103)->where('currency', $request->currency ?? 'USD')->first();
-        $gateway =json_decode($gate->gateway_parameter, true);
+        $gateway = json_decode($gate->gateway_parameter, true);
 
         if (!$gate) {
             if ($request->is('api/*')) {
@@ -227,8 +229,8 @@ class PaymentController extends Controller
         $data->try = 0;
         $data->status = 0;
         $data->save();
-        
-        if ($request->is('api/*')) { 
+
+        if ($request->is('api/*')) {
             $deposit = Deposit::where('trx', $data->trx)->orderBy('id', 'DESC')->with('gateway')->first();
             if (is_null($deposit) || $deposit->status != 0) {
                 if ($request->is('api/*')) {
@@ -261,7 +263,7 @@ class PaymentController extends Controller
             }
         }
 
-        if($request->is('api/*')){
+        if ($request->is('api/*')) {
             $res = [
                 'track' => $data->trx,
                 'order' => $data,
@@ -350,9 +352,9 @@ class PaymentController extends Controller
         $data = Deposit::where('trx', $trx)->first();
         $user = User::find($data->user_id);
 
-        // dd($data->order_number, $data->sub_id);
-
         if (is_null($data->order_number) && is_null($data->sub_id)) {
+
+            Log::info('User update First if -> Order number empty' . $data->order_number . 'and sub id is null' . $data->sub_id);
 
             if ($data->status == 0) {
                 $data->status = 1;
@@ -388,9 +390,14 @@ class PaymentController extends Controller
                 //     'trx' => $data->trx,
                 //     'post_balance' => getAmount($user->balance),
                 // ]);
+
+                if ($api == true) {
+                    return response()->json(['success' => true, 'message' => 'Product is Successfully Purchased!']);
+                }
             }
         }
         if (is_null($data->order_number) && !is_null($data->sub_id)) {
+            Log::info('User update Second if -> Order number empty' . $data->order_number . 'and sub id is not null' . $data->sub_id);
             $gnl = GeneralSetting::first();
             $subuser = UserSubscription::where('user_id', auth()->user()->id)->with('subscriptions')->first();
             $subuser->status = 0;
@@ -451,15 +458,24 @@ class PaymentController extends Controller
             //     'product_allowed' => $sub->allowed_product,
             //     'trx' => $transaction->trx,
             // ]);
+            if ($api == true) {
+                return response()->json(['success' => true, 'message' => 'Product is Successfully Purchased!']);
+            }
         }
         if (!is_null($data->order_number) && is_null($data->sub_id)) {
 
-            $user = auth()->user() ?? auth('user')->user();
+            Log::info('User update Third if -> Order number is not empty' . $data->order_number . 'and sub id is null' . $data->sub_id);
 
-            $orders = Order::where('order_number', $user ->id)->get();
+            $user = auth()->user() ?? auth('user')->user();
+            $order_number = $data->order_number ?? $user->id;
+            // Log::info($user);
+            
+            // $orders = Order::where('order_number', $user->id)->get();
+            $orders = Order::where('order_number', $order_number)->get();
+            // Log::info($orders);
 
             if (count($orders) > 0) {
-
+                Log::info('Order Found!');
                 $user = User::find($data->user_id);
                 $gnl = GeneralSetting::first();
 
@@ -478,6 +494,7 @@ class PaymentController extends Controller
                     $sell->total_price = $item->total_price;
                     $sell->status = 1;
                     $sell->save();
+                    Log::info("Sell Created! -> " . $sell->id);
                     if ($sell->bump_fee != 0) {
                         $bump = BumpResponse::Where('order_id', $item->id);
                         $bump->update([
@@ -486,6 +503,7 @@ class PaymentController extends Controller
                     }
                     $sell->product->total_sell += 1;
                     $sell->product->save();
+
                     $notification = new Notification();
                     $notification->user_id = $user->id;
                     $notification->cf_status = 0;
@@ -493,13 +511,17 @@ class PaymentController extends Controller
                     $notification->product_id = $sell->product_id;
                     $notification->meeting_status = 0;
                     $notification->save();
-                    $notification = new Notification;
-                    $notification->user_id = $item->author_id;
-                    $notification->cf_status = 0;
-                    $notification->sell_id = $sell->id;
-                    $notification->product_id = $sell->product_id;
-                    $notification->meeting_status = 0;
-                    $notification->save();
+
+                    Log::info("Notification Created! -> " . $notification->id);
+
+                    // $notification = new Notification;
+                    // $notification->user_id = $item->author_id;
+                    // $notification->cf_status = 0;
+                    // $notification->sell_id = $sell->id;
+                    // $notification->product_id = $sell->product_id;
+                    // $notification->meeting_status = 0;
+                    // $notification->save();
+
                     $levels = Level::get();
                     $author = $item->author;
                     $author->earning = $author->earning + ($sell->total_price - ($sell->product->category->buyer_fee + (($sell->total_price * $author->levell->product_charge) / 100)));
@@ -514,6 +536,9 @@ class PaymentController extends Controller
                     $authorTransaction->details = getAmount($authorTransaction->amount) . ' ' . $gnl->cur_text . ' Added with Balance For selling a product named ' . $item->product->name;
                     $authorTransaction->trx = getTrx();
                     $authorTransaction->save();
+
+                    Log::info("First Author Transaction Created! -> " . $authorTransaction->id);
+
                     $plan = UserSubscription::where('user_id', $author->id)->with('subscriptions')->first();
                     if (is_null($plan)) {
                         $plan = Subscription::where('id', 1)->first();
@@ -581,8 +606,12 @@ class PaymentController extends Controller
                 $transaction->trx = $data->trx;
                 $transaction->save();
 
+                Log::info("Second Transaction Created! -> " . $transaction->id);
+
                 $user->balance -= $data->amount;
                 $user->save();
+
+                Log::info("User balance updated! -> " . $user->balance);
 
                 $transaction = new Transaction();
                 $transaction->user_id = $data->user_id;
@@ -593,6 +622,8 @@ class PaymentController extends Controller
                 $transaction->details = getAmount($data->amount) . ' ' . $gnl->cur_text . ' Subtracted From Your Balance For Purchasing Products.';
                 $transaction->trx = $data->trx;
                 $transaction->save();
+
+                Log::info("Third Transaction Created! -> " . $transaction->id);
 
                 $productarray = [];
                 $productList = '<ol>';
@@ -645,11 +676,12 @@ class PaymentController extends Controller
                 }
 
                 foreach ($orders as $item) {
-                    dd($item->delete());
+                    Log::info("Delete orders items from user cart ! -> " . $item->id);
+                    $item->delete();
                 }
 
-                if($api == true){
-                    return $this->respondWithSuccess(null, 'Product is Successfully Purchased.');
+                if ($api == true) {
+                    return response()->json(['success' => true, 'message' => 'Product is Successfully Purchased!']);
                 }
 
                 session()->forget('order_number');
@@ -658,13 +690,15 @@ class PaymentController extends Controller
 
                 return redirect()->route('user.purchased.product')->withNotify($notify);
             } else {
-                if($api == true){
-                    return $this->responsdwithError('No products in your cart.');
+                Log::info('No products in your cart.');
+                if ($api == true) {
+                    return response()->json(['success' => false, 'message' => 'No products in your cart!'], 400);
                 }
                 $notify[] = ['error', 'No products in your cart.'];
                 return back()->withNotify($notify);
             }
         }
+        abort(404);
     }
 
     public function manualDepositConfirm()

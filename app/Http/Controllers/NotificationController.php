@@ -6,12 +6,11 @@ use App\BuyerSellerMeeting;
 use App\Http\Controllers\Controller;
 use App\Notification;
 use App\Sell;
-use Auth;
 use Illuminate\Http\Request;
-use stdClass;
 
 class NotificationController extends Controller
 {
+    public $activeTemplate ;
     //
     public function __construct()
     {
@@ -29,17 +28,18 @@ class NotificationController extends Controller
     }
     public function notifyMarkasread($nid = null)
     {
+        $user = auth()->user() ?? auth('user')->user();
         if ($nid == null) {
-            $notifications = Notification::where('user_id', auth()->user()->id)->where('mark_read', 0)->get();
+            $notifications = Notification::where('user_id', $user->id)->where('mark_read', 0)->get();
 
             foreach ($notifications as $n) {
                 $n->mark_read = 1;
                 $n->save();
             }
         } else {
-            $notifications = Notification::where('id', $nid)->first();
-            $notifications->mark_read = 1;
-            $notifications->save();
+            $notifications = Notification::where('id', $nid)->update([
+                'mark_read' => 1
+            ]);
         }
         return response()->json('success');
     }
