@@ -31,12 +31,14 @@
                                 </div>
                                 <div class="d-widget__icon rounded">
                                     <i class="las la-money-bill text--base"></i>
-                                    <a href="{{ route('user.transaction') }}" class="btn btn-sm btn--base py-1 text-center">@lang('View all')</a>
+                                    @php
+                                    $url = $partial ? route('user.transaction'): route('iframe.api.user.dashboard');
+                                    @endphp
+
+                                    <a href="{{ $url }}" class="btn btn-sm btn--base py-1 text-center">@lang('View all')</a>
                                 </div>
                             </div><!-- d-widget end -->
                         </div>
-
-
 
                         <div class="col-xl-4 col-sm-6 forseller">
                             <div class="d-widget d-flex flex-wrap align-items-center rounded-3">
@@ -70,7 +72,10 @@
                                 </div>
                                 <div class="d-widget__icon rounded">
                                     <i class="las la-cart-arrow-down text--base"></i>
-                                    <a href="{{ route('user.purchased.product') }}" class="btn btn-sm btn--base py-1 text-center">@lang('View all')</a>
+                                    @php
+                                    $url = $partial ? route('user.purchased.product') : route('iframe.api.purchased.product');
+                                    @endphp
+                                    <a href="{{ $url }}" class="btn btn-sm btn--base py-1 text-center">@lang('View all')</a>
                                 </div>
                             </div><!-- d-widget end -->
                         </div>
@@ -82,7 +87,10 @@
                                 </div>
                                 <div class="d-widget__icon rounded">
                                     <i class="las la-exchange-alt text--base"></i>
-                                    <a href="{{ route('user.transaction') }}" class="btn btn-sm btn--base py-1 text-center">@lang('View all')</a>
+                                    @php
+                                    $url = $partial ? route('user.transaction') : route('iframe.api.user.transaction');
+                                    @endphp
+                                    <a href="{{ $url }}" class="btn btn-sm btn--base py-1 text-center">@lang('View all')</a>
                                 </div>
                             </div><!-- d-widget end -->
                         </div>
@@ -123,7 +131,6 @@
                         </div><!-- user-widget end -->
                     </div><!-- user-sidebar end -->
                 </div>
-
             </div>
 
             <div class="row justify-content-center mb-30-none mt-5 forseller">

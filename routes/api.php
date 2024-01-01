@@ -59,6 +59,8 @@ Route::middleware('jwt.verify')->group(function () {
     Route::get('profile/setting', 'UserController@profile');
     Route::post('profile-setting', 'UserController@submitProfile');
 
+    Route::get('user/puchased-list', 'UserController@purchasedProductApi');
+
     // prefix: user
     Route::name('iframe.api.')->prefix('iframe')->group(function () {
         Route::get('user/dashboard', 'UserController@home')->name('user.dashboard');

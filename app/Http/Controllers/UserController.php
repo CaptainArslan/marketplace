@@ -117,11 +117,11 @@ class UserController extends Controller
 
     public function profile(Request $request)
     {
-        
+
         $data['page_title'] = "Profile Setting";
         $data['user'] = auth()->user() ?? auth('user')->user();
         $data['user']->base_url = url('/assets/images/user/profile/');
-        if($request->is('api/*')) {
+        if ($request->is('api/*')) {
             return $this->respondWithSuccess($data['user'], 'User Profile');
         }
         return view($this->activeTemplate . 'user.profile-setting', $data);
@@ -711,6 +711,12 @@ class UserController extends Controller
         }
 
         return view($this->activeTemplate . 'user.product.purchased', get_defined_vars());
+    }
+    public function purchasedProductApi(Request $request)
+    {
+        $user = auth()->user() ?? auth('user')->user();
+        $data = Sell::where('user_id', $user->id)->with('product', 'productcustomfields', 'customfieldresponse', 'bumpresponses')->get();
+        return $this->respondWithSuccess($data, 'Purchased product list');
     }
 
     public function rating(Request $request)
