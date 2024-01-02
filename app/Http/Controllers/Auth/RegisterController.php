@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\GeneralSetting;
-use App\Http\Controllers\Controller;
-use App\Providers\RouteServiceProvider;
 use App\User;
+use App\Order;
 use App\UserLogin;
-use Illuminate\Auth\Events\Registered;
-use Illuminate\Foundation\Auth\RegistersUsers;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
+use App\GeneralSetting;
 use App\Lib\StrongPassword;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Auth\Events\Registered;
+use App\Providers\RouteServiceProvider;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Foundation\Auth\RegistersUsers;
 
 class RegisterController extends Controller
 {
@@ -158,6 +159,17 @@ class RegisterController extends Controller
         $this->guard()->login($user);
 
         if ($request->is('api/*')) {
+            if ($request->order_number) {
+                $order = Order::where('order_number', $request->order_number)->get();
+                if ($order->count() > 0) {
+                    foreach ($order as $o) {
+                        $o->order_number = $user->id;
+                        $o->save();
+                    }
+                } else {
+                    return $this->respondWithError('Invalid Order Number!');
+                }
+            }
             return $this->respondWithSuccess(null, 'User signed up successfully!');
         }
 

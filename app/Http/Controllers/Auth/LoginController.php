@@ -88,13 +88,24 @@ class LoginController extends Controller
                 return $this->respondWithError("User Not registered!");
             }
             
-            if (!$token = auth('user')->attempt($request->all())) {
+            if (!$token = auth('user')->attempt($request->only('email', 'password'))) {
                 return $this->respondWithError('Invalid credentials!');
             }
             
             $user = auth('user')->user();
-            Auth::loginUsingId($user->id);
+            // Auth::loginUsingId($user->id);
 
+            if($request->order_number){
+                $order = Order::where('order_number', $request->order_number)->get();
+                if($order->count() > 0){
+                    foreach($order as $o){
+                        $o->order_number = $user->id;
+                        $o->save();
+                    }
+                }else{
+                    return $this->respondWithError('Invalid Order Number!');
+                }
+            }
 
             return response()->json([
                 'success' => true,
