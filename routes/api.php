@@ -69,5 +69,6 @@ Route::middleware('jwt.verify')->group(function () {
         Route::get('purchased-product/list', 'UserController@purchasedProduct')->name('purchased.product');
         Route::get('ticket', 'TicketController@supportTicket')->name('ticket');
         Route::get('meetings/all', 'MeetingController@allMeeting')->name('meeting.all');
+        Route::get('/new/ticket/{id?}', 'TicketController@openSupportTicket')->name('ticket.open');
     });
 });

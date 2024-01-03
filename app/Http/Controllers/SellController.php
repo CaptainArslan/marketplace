@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Sell;
 use App\Level;
 use App\Order;
+use App\Deposit;
 use App\Product;
 use Carbon\Carbon;
 use App\ProductBump;
@@ -12,13 +13,13 @@ use App\Transaction;
 use App\BumpResponse;
 use App\Subscription;
 use App\GeneralSetting;
+use App\GatewayCurrency;
 use App\WishlistProduct;
 use App\UserSubscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Validator;
-use App\GatewayCurrency;
 
 class SellController extends Controller
 {
@@ -123,8 +124,8 @@ class SellController extends Controller
             $order->total_price = $totalPrice;
             $order->save();
             if ($request->bump_fee != 0) {
-                $bumpids = $request->bump;
-                $pages = $request->pages;
+                $bumpids = is_object($request->bump) ? json_decode(json_encode($request->bump), true) : $request->bump;
+                $pages = is_object($request->pages) ? json_decode(json_encode($request->pages), true) : $request->pages;
                 foreach ($bumpids as $key => $value) {
                     $bump = ProductBump::findorFail($key);
                     $newbump = new BumpResponse;
@@ -165,6 +166,7 @@ class SellController extends Controller
             return back()->withNotify($e->getMessage());
         }
     }
+
     public function addtowishlist($id)
     {
 
@@ -197,35 +199,40 @@ class SellController extends Controller
         $notify[] = ['success', 'Product added to wishlist successfully'];
         return back()->withNotify($notify);
     }
+
     public function carts(Request $request, $ordernumber = null)
     {
         $page_title = 'Cart';
+        $user = auth()->user() ?? auth('user')->user();
 
-        if (auth()->user()) {
-            $user = auth()->user();
+        if ($user) {
+            // Delete specific orders related to the user
             Order::where('author_id', $user->id)->delete();
-            $orders = Order::with('product')->where('order_number', $user->id)->get();
+            // Fetch orders related to the user
+            $orders = Order::with('product')->where('author_id', $user->id)->get();
         } else {
-
             if ($request->is('api/*')) {
                 if (empty($ordernumber) || is_null($ordernumber)) {
                     $apidata['status'] = "Success";
-                    $apidata['data'] = " ";
+                    $apidata['data'] = []; // Return an empty array
                     $apidata['message'] = "No Product Added";
                 } else {
                     $apidata['status'] = "Success";
-                    $orders = Order::with('product')->where('order_number', $ordernumber)->get();
-
+                    // Fetch orders based on the order number or user ID
+                    $orders = Order::with('product')->where('order_number', $ordernumber ?? $user->id)->get();
                     $apidata['data'] = $orders;
-                    $apidata['message'] = "Product Retrived Successfully";
+                    $apidata['message'] = "Product Retrieved Successfully";
                 }
                 return response()->json($apidata);
             } else {
+                // Fetch orders based on the session
                 $orders = Order::where('order_number', session()->get('order_number'))->get();
             }
         }
+
         return view($this->activeTemplate . 'cart', compact('page_title', 'orders'));
     }
+
     public function wishlists()
     {
         $page_title = 'Wishlist';
@@ -238,6 +245,7 @@ class SellController extends Controller
         }
         return view($this->activeTemplate . 'wishlist', get_defined_vars());
     }
+
     public function removeCart($id)
     {
         $order = Order::findOrFail(Crypt::decrypt($id));
@@ -248,6 +256,7 @@ class SellController extends Controller
         $notify[] = ['success', 'Product has been remove from cart successfully'];
         return back()->withNotify($notify);
     }
+
     public function removewishlist($id)
     {
         $item = WishlistProduct::findOrFail(Crypt::decrypt($id));
@@ -440,11 +449,14 @@ class SellController extends Controller
             }
         }
         if ($request->wallet_type == 'online' && $request->subscription == 0) {
+            $orderNumber = null;
             if ($request->order_number) {
-                $orders = Order::where('order_number', $request->order_number)->get();
+                $orderNumber = $request->order_number;
             } else {
-                $orders = Order::where('order_number', $user->id)->get();
+                $orderNumber = $user->id;
             }
+
+            $orders = Order::where('order_number', $orderNumber)->get();
 
             if (count($orders) > 0) {
                 if ($request->is('api/*')) {
@@ -465,14 +477,19 @@ class SellController extends Controller
                         $publishable_keys[$gate->gateway_alias] = $parameter['publishable_key'] ?? null;
                     }
 
+                    $subid = $request->subid ?? 0;
+
+                    $payment = $this->paymentInsert($request, $subid, $totalPrice, $user);
+
                     $data = [
-                        'total_price' => $totalPrice,
-                        'gateway_currency' => $gatewayCurrency,
-                        // 'publishable_keys' => $publishable_keys, // Use the collected array
+                        'order' => $payment,
+                        'publishable_keys' => $publishable_keys, // Use the collected array
+                        // 'total_price' => $totalPrice,
+                        // 'gateway_currency' => $gatewayCurrency,
                     ];
+
                     return $this->respondWithSuccess($data, 'Checkout now!');
                 }
-
                 return redirect()->route('user.payment');
             } else {
                 if ($request->is('api/*')) {
@@ -582,5 +599,77 @@ class SellController extends Controller
 
             return redirect()->route('user.subscriptionpayment', $sub->id);
         }
+    }
+
+    public function paymentInsert($request, $subid = 0, $newchargeprice, $user)
+    {
+        if ($request->has('order_number')) {
+            $orderNumber = $request->order_number;
+        } else {
+            $orderNumber = $user->id;
+        }
+
+        $orders = Order::where('order_number', $orderNumber)->get();
+        $totalPrice = $orders->sum('total_price');
+
+        if ($totalPrice != (float) $newchargeprice) {
+            return $this->respondWithError('Something went wrong!');
+        }
+        $gate = GatewayCurrency::where('method_code', $request->method_code ?? 103)->where('currency', $request->currency ?? 'USD')->first();
+
+        if (!$gate) {
+            return $this->respondWithError('Invalid Gateway!');
+        }
+
+        $data = new Deposit();
+        if ($subid == 0) {
+            $data->order_number = $orders[0]->order_number;
+            $data->sub_id = null; //means this deposit is for the produt order
+        } else {
+            $data->order_number = null;
+            $data->sub_id = $subid; // means this deposit is for Subscription buy
+            $sub = Subscription::where('id', $subid)->first();
+            $subuser = UserSubscription::where('user_id', auth()->user()->id)->with('subscriptions')->first();
+
+            if (!is_null($subuser)) {
+                if ($subuser->subscriptions->plan_type == 1) {
+                    $totaldays = Carbon::parse($subuser->expire_on)->diffInDays(Carbon::parse($subuser->start_on));
+                    $remaindays = Carbon::parse($subuser->expire_on)->diffInDays(Carbon::now());
+                    $perday = $subuser->subscriptions->price / $totaldays;
+                    $currentprice = $remaindays * $perday;
+                    $newchargeprice = $sub->price - $currentprice;
+                    // dd($subuser->subscriptions->price, $totaldays, $remaindays, $perday, $currentprice, $newcharge);
+                }
+            }
+        }
+
+        $charge = getAmount($gate->fixed_charge + ($newchargeprice * $gate->percent_charge / 100));
+        $payable = getAmount($newchargeprice + $charge);
+        $final_amo = getAmount($payable * $gate->rate);
+        $data->user_id = $user->id;
+        $data->method_code = $gate->method_code;
+        $data->method_currency = strtoupper($gate->currency);
+        $data->amount = $newchargeprice;
+        $data->charge = $charge;
+        $data->rate = $gate->rate;
+        $data->final_amo = getAmount($final_amo);
+        $data->btc_amo = 0;
+        $data->btc_wallet = "";
+        $data->trx = getTrx();
+        $data->try = 0;
+        $data->status = 0;
+        $data->save();
+
+        $deposit = Deposit::where('trx', $data->trx)->orderBy('id', 'DESC')->with('gateway')->first();
+        if (is_null($deposit) || $deposit->status != 0) {
+            return $this->respondWithError('Invalid Deposit Request!');
+        }
+
+        if ($deposit->method_code >= 1000) {
+            $this->userDataUpdate($deposit);
+            return $this->respondWithError('Your deposit request is queued for approval.');
+        }
+
+        return $data;
     }
 }

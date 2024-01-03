@@ -97,12 +97,12 @@ class LoginController extends Controller
 
             if($request->order_number){
                 $order = Order::where('order_number', $request->order_number)->get();
-                if($order->count() > 0){
+                if ($order->count() > 0) {
                     foreach($order as $o){
                         $o->order_number = $user->id;
                         $o->save();
                     }
-                }else{
+                } else {
                     return $this->respondWithError('Invalid Order Number!');
                 }
             }

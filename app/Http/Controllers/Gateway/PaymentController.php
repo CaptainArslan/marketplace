@@ -132,7 +132,7 @@ class PaymentController extends Controller
         $gatewayCurrency = GatewayCurrency::where('min_amount', '<', $totalPrice)->where('max_amount', '>', $totalPrice)->whereHas('method', function ($gate) {
             $gate->where('status', 1);
         })->with('method')->orderby('method_code')->get();
-
+        
         return view($this->activeTemplate . 'user.payment.payment', compact('gatewayCurrency', 'page_title', 'totalPrice'));
     }
 
@@ -212,7 +212,6 @@ class PaymentController extends Controller
             }
         }
 
-
         $charge = getAmount($gate->fixed_charge + ($newchargeprice * $gate->percent_charge / 100));
         $payable = getAmount($newchargeprice + $charge);
         $final_amo = getAmount($payable * $gate->rate);
@@ -261,11 +260,8 @@ class PaymentController extends Controller
                 $notify[] = ['error', $data->message];
                 return redirect()->route(gatewayRedirectUrl())->withNotify($notify);
             }
-        }
 
-        if ($request->is('api/*')) {
             $res = [
-                'track' => $data->trx,
                 'order' => $data,
                 'publishable_key' => $gateway['publishable_key'] ?? null,
             ];

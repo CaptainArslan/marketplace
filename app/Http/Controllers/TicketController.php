@@ -86,17 +86,22 @@ class TicketController extends Controller
 
         return view($this->activeTemplate . 'user.support.index', get_defined_vars());
     }
-    public function openSupportTicket($id = null)
+    public function openSupportTicket(Request $request, $id = null)
     {
-        if (!Auth::user()) {
+        $user = auth()->user() ?? auth('user')->user();
+        if (!$user) {
             abort(404);
         }
         $page_title = "Support Tickets";
-        $user = Auth::user();
         if (!is_null($id)) {
             $product = Product::where('id', $id)->first();
         }
         $sellers = User::where('seller', 1)->where('status', 1)->get();
+
+        if($request->is('api/*')){
+            $partial = false;
+        }
+
         return view($this->activeTemplate . 'user.support.create', get_defined_vars());
     }
 
