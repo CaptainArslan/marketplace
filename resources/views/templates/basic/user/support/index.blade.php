@@ -42,10 +42,21 @@
 @push('script')
 <script>
     $(document).ready(function() {
+        "use strict";
+
+        var api = @json($api);
+        var token = @json($token);
+
+        let val = {
+            ":token": token,
+            ':api': api,
+            '&amp;': "&"
+        }
+
         var table = $('#data-table').DataTable({
             processing: true,
             serverSide: true,
-            ajax: "{{ route('ticket') }}",
+            ajax: decodeURIComponent("{{ route('ticket', ['api' => ':api','token'=>':token']) }}").replace(/:token|:api|&amp;/gm, (m) => (val[m] ?? m)),
             columns: [{
                     data: 'subject',
                     name: 'subject'

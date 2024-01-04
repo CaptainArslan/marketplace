@@ -2,7 +2,6 @@
 @section('content')
 @if ($partial)
 @include($activeTemplate . 'partials.dashboardHeader')
-
 @endif
 <section class="pt-100 pb-100">
     <div class="container">
@@ -23,7 +22,10 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <form action="{{ route('ticket.store') }}" method="post" enctype="multipart/form-data" onsubmit="return submitUserForm();">
+                        @php
+                            $url = ($partial) ? route('ticket.store') : route('iframe.api.ticket.store', ['token' => request()->token]);
+                        @endphp
+                        <form action="{{ $url }}" method="post" enctype="multipart/form-data" onsubmit="return submitUserForm();">
                             @csrf
                             <div class="row">
                                 @if(isset($product))

@@ -32,7 +32,7 @@
                                 <div class="d-widget__icon rounded">
                                     <i class="las la-money-bill text--base"></i>
                                     @php
-                                    $url = $partial ? route('user.transaction'): route('iframe.api.user.dashboard');
+                                    $url = $partial ? route('user.transaction'): route('iframe.api.user.dashboard', ['token' => request()->token]);
                                     @endphp
 
                                     <a href="{{ $url }}" class="btn btn-sm btn--base py-1 text-center">@lang('View all')</a>
@@ -73,7 +73,7 @@
                                 <div class="d-widget__icon rounded">
                                     <i class="las la-cart-arrow-down text--base"></i>
                                     @php
-                                    $url = $partial ? route('user.purchased.product') : route('iframe.api.purchased.product');
+                                    $url = $partial ? route('user.purchased.product') : route('iframe.api.purchased.product', ['token' => request()->token]);
                                     @endphp
                                     <a href="{{ $url }}" class="btn btn-sm btn--base py-1 text-center">@lang('View all')</a>
                                 </div>
@@ -88,7 +88,7 @@
                                 <div class="d-widget__icon rounded">
                                     <i class="las la-exchange-alt text--base"></i>
                                     @php
-                                    $url = $partial ? route('user.transaction') : route('iframe.api.user.transaction');
+                                    $url = $partial ? route('user.transaction') : route('iframe.api.user.transaction', ['token' => request()->token]);
                                     @endphp
                                     <a href="{{ $url }}" class="btn btn-sm btn--base py-1 text-center">@lang('View all')</a>
                                 </div>
@@ -167,20 +167,63 @@ $itr = 0;
 <script>
     'use strict';
 
+    // var config = {
+    //     type: 'line',
+    //     data: {
+    //         labels: @php echo json_encode($months) @endphp,
+    //         datasets: [{
+    //             label: '@lang("Amount ")',
+    //             backgroundColor: '#{{ $general->base_color }}',
+    //             borderColor: '#{{ $general->base_color }}',
+    //             data: [
+    //                 @foreach($months as $k => $month)
+    //                 @if(@$sell_chart_data[$itr]['month'] == $month) {
+    //                     {
+    //                         @$sell_chart_data[$itr]['amount']
+    //                     }
+    //                 },
+    //                 @php $itr++;@endphp
+    //                 @else
+    //                 0,
+    //                 @endif
+    //                 @endforeach
+    //             ],
+    //             fill: false,
+    //         }]
+    //     },
+    //     options: {
+    //         responsive: true,
+    //         title: {
+    //             display: true,
+    //             text: '@lang('
+    //             Sell Data Monthly ')'
+    //         },
+    //         scales: {
+    //             yAxes: [{
+    //                 ticks: {
+    //                     // the data minimum used for determining the ticks is Math.min(dataMin, suggestedMin)
+    //                     suggestedMin: 10,
+
+    //                     // the data maximum used for determining the ticks is Math.max(dataMax, suggestedMax)
+    //                     suggestedMax: 50
+    //                 }
+    //             }]
+    //         }
+    //     }
+    // };
     var config = {
         type: 'line',
         data: {
-            labels: @php echo json_encode($months) @endphp,
+            labels: @json($months),
             datasets: [{
-                label: '@lang('
-                Amount ')',
+                label: '@lang("Amount ")',
                 backgroundColor: '#{{ $general->base_color }}',
                 borderColor: '#{{ $general->base_color }}',
                 data: [
                     @foreach($months as $k => $month)
-                    @if(@$sell_chart_data[$itr]['month'] == $month) {
+                    @if(isset($sell_chart_data[$itr]['month']) && $sell_chart_data[$itr]['month'] == $month) {
                         {
-                            @$sell_chart_data[$itr]['amount']
+                            $sell_chart_data[$itr]['amount']
                         }
                     },
                     @php $itr++;@endphp
@@ -196,22 +239,19 @@ $itr = 0;
             responsive: true,
             title: {
                 display: true,
-                text: '@lang('
-                Sell Data Monthly ')'
+                text: '@lang("Sell Data Monthly")'
             },
             scales: {
                 yAxes: [{
                     ticks: {
-                        // the data minimum used for determining the ticks is Math.min(dataMin, suggestedMin)
                         suggestedMin: 10,
-
-                        // the data maximum used for determining the ticks is Math.max(dataMax, suggestedMax)
                         suggestedMax: 50
                     }
                 }]
             }
         }
     };
+
 
     window.onload = function() {
         var ctx = document.getElementById('myChart').getContext('2d');

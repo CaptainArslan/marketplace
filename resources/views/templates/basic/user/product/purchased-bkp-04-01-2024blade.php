@@ -51,29 +51,10 @@ $nid = null;
 @push('script')
 <script src="{{ asset($activeTemplateTrue . 'js/starrr.js') }}"></script>
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<script>
-    function showRating(param) {
-        var id  = $(param).data('id');
-        var modal = $(`#reviewModal${id}`);
-        modal.find(`input[class="product_id${id}"]`).val(id);
-        var $s2input = $(`input[class="rating${id}"]`);
-        var i = 0;
-        $(`#star${id}`).starrr({
-            max: 5,
-            rating: 5,
-            change: function(e, value) {
-                $s2input.val(value).trigger('input');
-            }
-        });
-        $(modal).modal('show');
-    }
-</script>
 <script>
     'use strict';
 
     $(document).ready(function() {
-
         var nid = @json($nid);
         var api = @json($api);
         var token = @json($token);
@@ -137,6 +118,7 @@ $nid = null;
                 },
             ],
             "createdRow": function(row, data, dataIndex) {
+                // console.log(data);
                 var sel = '';
                 if (data.bump_fee != 0) {
                     var item = dataIndex
@@ -162,23 +144,24 @@ $nid = null;
                         )
                     });
                 }
-                // $(`.reviewBtn${data.id}`).on('click', function() {
-                //     console.log(data.id);
-                //     var modal = $(`#reviewModal${data.id}`);
-                //     modal.find(`input[name="product_id${data.id}"]`).val($(this).data(
-                //         'id'));
-                //     var $s2input = $(`input[name="rating${data.id}"]`);
-                //     var i = 0;
-                //     for (i; i < 5; i++) {
-                //         $(`#star${i}`).starrr({
-                //             max: 5,
-                //             rating: 5,
-                //             change: function(e, value) {
-                //                 $s2input.val(value).trigger('input');
-                //             }
-                //         });
-                //     }
-                // });
+                $(`.reviewBtn${data.id}`).on('click', function() {
+                    console.log(`.reviewBtn${data.id}`);
+                    var modal = $(`#reviewModal${data.id}`);
+                    modal.find(`input[name="product_id${data.id}"]`).val($(this).data(
+                        'id'));
+                    var $s2input = $(`input[name="rating${data.id}"]`);
+                    var index = 5;
+                    var i = 0;
+                    for (i; i < indx; i++) {
+                        $(`#star${i}`).starrr({
+                            max: 5,
+                            rating: 5,
+                            change: function(e, value) {
+                                $s2input.val(value).trigger('input');
+                            }
+                        });
+                    }
+                });
                 if (data.productcustomfields.length > 0) {
                     if (data.customfieldresponse.length > 0 || data.customfieldresponse != null) {
                         var cf = data.customfieldresponse.reduce((acc, curr) => {
@@ -187,22 +170,22 @@ $nid = null;
                         }, {});
                     }
                     var modalHtml = `<div class="modal fade" id="addcustomfieldmodal${data.id}"  data-bs-keyboard="false" tabindex="-1"
-                        aria-labelledby="staticBackdropLabel" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content">
-                                <form action="{{ route('user.late.customfield') }}" method="POST" enctype="multipart/form-data">
-                                    @csrf
-                                    <div class="modal-header">
-                                        <h4>@lang('Fill the Following CustomField')</h4>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body p-4">
-                                        <div class="row">
+                                        aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content">
+                                                <form action="{{ route('user.late.customfield') }}" method="POST" enctype="multipart/form-data">
+                                                    @csrf
+                                                    <div class="modal-header">
+                                                        <h4>@lang('Fill the Following CustomField')</h4>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body p-4">
+                                                        <div class="row">
 
-                                            <input type='hidden' class="form--control" name='sell_id' value="${data.id}"
-                                                    required>
-                                            <div class="col-lg-12">
-                            <p class="text-success"></p>`;
+                                                            <input type='hidden' class="form--control" name='sell_id' value="${data.id}"
+                                                                    required>
+                                                            <div class="col-lg-12">
+                                                                <p class="text-success"></p>`;
                     data.productcustomfields.forEach(x => {
                         let clr
                         var o = new Object();
@@ -214,22 +197,22 @@ $nid = null;
                             x.customfields.customfielditem.forEach(y => {
                                 let label = y.label
                                 modalHtml += `<label>${y.label}</label><br>
-                                <input type="` + x.customfields.type + `" class="form--control"
-                                    name='field_label[${y.id}]'
-                                    value="${(clr ? clr[y.label]:'')}">`;
+                                                                    <input type="` + x.customfields.type + `" class="form--control"
+                                                                        name='field_label[${y.id}]'
+                                                                        value="${(clr ? clr[y.label]:'')}">`;
                             });
 
                         } else if (x.customfields.type != 'color') {
                             modalHtml += `<div class="col-lg-12 form-group">
-                                                        <label>${x.customfields.name}</label><br>
-                                                        <input type='${x.customfields.type}' class="form--control"
-                                                            name='field_id[${x.customfield_id}]'
-                                                            value="${cf[x.customfield_id] ?? ''}">
-                                                    </div>`;
+                                                                                            <label>${x.customfields.name}</label><br>
+                                                                                            <input type='${x.customfields.type}' class="form--control"
+                                                                                                name='field_id[${x.customfield_id}]'
+                                                                                                value="${cf[x.customfield_id] ?? ''}">
+                                                                                        </div>`;
                         }
                         modalHtml += `<input type="hidden" class="form--control"
-                                    name='field_id[]'
-                                    value="${x.customfield_id}">`
+                                                                        name='field_id[]'
+                                                                        value="${x.customfield_id}">`
                     });
 
                     if (data.request_by == 0) {
@@ -237,19 +220,19 @@ $nid = null;
                         if (data.customfieldresponse.length <= 0 || data.customfieldresponse ==
                             null || (data.request_by == 0 && data.approve_edit == 1)) {
                             modalHtml += `<button type="submit" name="submitbutton${data.id}" class="btn btn-md px-4 btn--base" data-submit='addcustomfieldmodal${data.id}' >Submit
-                                changes</button>
-                            <span class="text-danger mb-7" style="color:red">Note:Please Update the above
-                                CustomField</span>`;
+                                                                    changes</button>
+                                                                <span class="text-danger mb-7" style="color:red">Note:Please Update the above
+                                                                    CustomField</span>`;
                         } else if (data.request_by == 0 && data.approve_edit == 0) {
                             modalHtml += `<a  data-value="1" class="btn request_edit${data.id}
-                            ajax btn-md px-4 btn--base">Request for edit</a>`;
+                                                                ajax btn-md px-4 btn--base">Request for edit</a>`;
                         } else {
                             modalHtml += `<span style=" font-size:px;color:red">Note: No Updated Response is provided from the
-                                            Buyer</span>`;
+                                                                                Buyer</span>`;
                         }
                     } else {
                         modalHtml += `<span class="text-danger mb-7" style="color:red">Note: Your Current Request is Under
-                            Process</span>`
+                                                                Process</span>`
                     }
                     modalHtml += `</div></form></div></div></div>`;
                     $('body').append(modalHtml);
@@ -286,14 +269,17 @@ $nid = null;
                         });
                     });
                 }
-                var newUrl = api ? decodeURIComponent("{{ route('iframe.api.rating', ['token'=>':token']) }}").replace(/:token|&amp;/gm, (m) => (val[m] ?? m)) : "{{ route('user.rating') }}";
-
-                console.log(data.product.id);
+                var currentUrl = window.location.href;
+                var ratingUrl = "{{ route('user.rating') }}";
+                if (currentUrl.includes('iframe') || currentUrl.includes('api')) {
+                    var ratingUrl = "{{ route('iframe.api.rating') }}?token=" + token;
+                }
+                // console.log(data);
                 var review = `<div class="modal fade" id=reviewModal${data.id} data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
                                 aria-labelledby="staticBackdropLabel" aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered">
                                     <div class="modal-content">
-                                        <form action="${newUrl}" method="POST">
+                                        <form action="${ratingUrl}" method="POST">
                                             @csrf
                                             <div class="modal-header">
                                                 <h4>@lang('Give Review')</h4>
@@ -305,8 +291,8 @@ $nid = null;
                                                         <label for="">@lang('Give your rating')</label><br>
                                                         <div class='starrr' id='star${data.id}'></div>
 
-                                                        <input type='hidden' name="rating" class="rating${data.id}" value='0' id='star2_input' required>
-                                                        <input type="hidden" name="product_id" class="product_id${data.product.id}" value="${data.product.id}" required>
+                                                        <input type='hidden' name="rating" value='0' id='star2_input' required>
+                                                        <input type="hidden" name="product_id" value="${data.product.id}" required>
 
                                                         <div class="form-group">
                                                             <label for="">@lang('Write your opinion')</label>
@@ -326,6 +312,7 @@ $nid = null;
                             </div>`;
                 $('body').append(review);
             }
+
         });
     });
 </script>

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Str;
 use File;
-use Image;
 use App\Sell;
 use App\User;
 use stdClass;
@@ -101,12 +100,6 @@ class UserController extends Controller
 
         $thisMonthRealeased = $user->products()->whereMonth('created_at', now())->where('status', 1)->count();
         $thisMonthPurchased = $user->buy()->whereMonth('created_at', now())->where('status', 1)->count();
-        // if ($request->is('api/*') && !$request->token) {
-        //     $data = [
-        //         'redirect_url' => route('iframe.api.user.dashboard', ['token' => extractBearerToken($request->header('authorization'))]),
-        //     ];
-        //     return $this->respondWithSuccess($data, 'Dashboard page loaded!');
-        // }
 
         if (($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
             $partial = false;
@@ -592,8 +585,21 @@ class UserController extends Controller
         $page_title = "Purchased Products";
         // $data= Sell::where('user_id', auth()->user()->id)->with('product', 'productcustomfields', 'customfieldresponse', 'bumpresponses')->get();
         // dd($data);
+        $api = false;
+        $token = '';
+        if (($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
+            $partial = false;
+            $api = true;
+            $token = $request->token;
+        }
+
         $empty_message = 'No data found';
         $user = auth()->user() ?? auth('user')->user();
+        if ($request->nid == '') {
+            $products = Sell::where('user_id', $user->id)->with('product', 'productcustomfields', 'customfieldresponse', 'bumpresponses');
+        } else {
+            $products = Sell::where('id', $request->nid)->where('user_id', $user->id)->with('product', 'productcustomfields', 'customfieldresponse', 'bumpresponses');
+        }
         if ($request->ajax()) {
             if ($request->nid == '') {
                 $data = Sell::where('user_id', $user->id)->with('product', 'productcustomfields', 'customfieldresponse', 'bumpresponses');
@@ -652,16 +658,18 @@ class UserController extends Controller
                         return '<span class="badge badge--success">No</span>';
                     }
                 })
-                ->addColumn('createticket', function ($row) {
-                    $ticket = '<a href="' . route('ticket.open', $row->product_id) . '"><i
+                ->addColumn('createticket', function ($row) use ($request) {
+                    $url  = route('ticket.open', $row->product_id);
+                    if ($request->api && $request->token) {
+                        $url = route('iframe.api.ticket.open', $row->product_id . "?token=" . $request->token);
+                    }
+                    $ticket = '<a href="' . $url . '"><i
                                 class="las la-headset fs-5 me-2"></i>Ticket Support</a>';
                     return $ticket;
                 })
 
                 ->addColumn('action', function ($row) {
-
                     if ($row->status == 1) {
-
                         $statusdata  = '<a href="' . route('user.download', Crypt::encrypt($row->product->id)) . '"
                                                         class="icon-btn bg--primary download-file"><i
                                                             class="las la-download" data-bs-toggle="tooltip"
@@ -672,9 +680,8 @@ class UserController extends Controller
                                                             title="Invoice"></i></a>';
 
                         if (!auth()->user()->existedRating($row->product->id)) {
-                            $statusdata .= ' <a href="javascript:void(0)" data-bs-toggle="modal"
-                                                            data-bs-target="#reviewModal' . $row->id . '"
-                                                            class="icon-btn bg--primary reviewBtn"><i
+                            $statusdata .= ' <a href="javascript:void(0)" onclick="showRating(this)" data-id="'.$row->id.'"
+                                                            class="icon-btn bg--primary reviewBtn'.$row->id.'"><i
                                                                 class="las la-star-of-david" data-bs-toggle="tooltip"
                                                                 data-bs-placement="top" title="Give Review"></i></a>';
                         }
@@ -706,9 +713,7 @@ class UserController extends Controller
                 ->make(true);
         }
 
-        if (($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
-            $partial = false;
-        }
+
 
         return view($this->activeTemplate . 'user.product.purchased', get_defined_vars());
     }
@@ -721,17 +726,24 @@ class UserController extends Controller
 
     public function rating(Request $request)
     {
-
+        // dd($request->all());
         $request->validate([
             'rating' => 'required|integer|gt:0|max:5',
             'product_id' => 'required|integer|gt:0',
             'review' => 'required',
         ]);
 
-        $product = Sell::where('product_id', $request->product_id)->where('user_id', auth()->user()->id)->where('status', 1)->first();
-        $user = auth()->user();
+        $user = auth()->user() ?? auth('user')->user();
+
+        $product = Sell::where('product_id', $request->product_id)
+            ->where('user_id', $user->id)
+            ->where('status', 1)
+            ->first();
 
         if ($product == null) {
+            if ($request->is('api/*')) {
+                return $this->respondWithError('Something Went Wrong!');
+            }
             $notify[] = ['error', 'Something went wrong'];
             return back()->withNotify($notify);
         }
@@ -760,6 +772,10 @@ class UserController extends Controller
         $product->product->user->total_response = $totalResponseAthor;
         $product->product->user->avg_rating = $avgRatingAuthor;
         $product->product->user->save();
+
+        // if ($request->is('api/*')) {
+        //     return $this->respondWithSuccess('Thanks for your review!');
+        // }
 
         $notify[] = ['success', 'Thanks for your review'];
         return back()->withNotify($notify);

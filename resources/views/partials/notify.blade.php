@@ -16,8 +16,7 @@
 @endforeach
 @endif
 
-@if (!request()->is('api/*'))
-@if ($errors->any())
+@if (isset($errors) && $errors->any())
 @php
 $collection = collect($errors->all());
 $errors = $collection->unique();
@@ -33,7 +32,6 @@ $errors = $collection->unique();
     @endforeach
 </script>
 
-@endif
 @endif
 
 <script>
