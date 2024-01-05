@@ -22,7 +22,7 @@ class Product extends Model
         
     ];
 
-    // protected $with = ['user', 'sells'];
+    protected $with = ['user', 'sells'];
     public function category()
     {
         return $this->belongsTo(Category::class);

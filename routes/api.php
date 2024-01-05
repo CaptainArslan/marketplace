@@ -32,6 +32,7 @@ header('Access-Control-Allow-Credentials: true');
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
+
 Route::get('/{home?}', 'SiteController@index')->name('homepage');
 Route::get('all-products/{fetch?}', 'SiteController@allProducts')->name('fetch.products');
 Route::get('product/search/{query?}', 'SiteController@productSearch')->name('search.product');

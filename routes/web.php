@@ -514,6 +514,9 @@ Route::name('user.')->group(function () {
 Route::name('user.')->prefix('user')->group(function () {
     Route::middleware('auth')->group(function () {
 
+        Route::get('upload-build', 'ZipController@index')->name('upload.build');
+
+
         Route::get('authorization', 'AuthorizationController@authorizeForm')->name('authorization');
         Route::get('resend-verify', 'AuthorizationController@sendVerifyCode')->name('send_verify_code');
         Route::post('verify-email', 'AuthorizationController@emailVerification')->name('verify_email');
