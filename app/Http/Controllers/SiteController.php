@@ -615,7 +615,7 @@ class SiteController extends Controller
         return view($this->activeTemplate . 'products', compact('page_title', 'products'));
     }
 
-    public function allProducts($fetch = null, Request $request)
+    public function allProducts(Request $request, $fetch = null)
     {
         $page_title = 'All Products';
         $empty_message = 'No data Found';
@@ -647,7 +647,7 @@ class SiteController extends Controller
         $apidata['allTags'] = $tags;
 
         if ($request->is('api/*')) {
-            return $this->respondWithSuccess($apidata, 'All Products');
+            return response()->json($apidata);
         }
 
         return view($this->activeTemplate . 'search', compact('page_title', 'empty_message', 'products', 'tags', 'categoryForSearchPage', 'min', 'max'));
