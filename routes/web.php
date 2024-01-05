@@ -13,30 +13,30 @@ Route::get('/clear', function () {
  */
 
 
-// Route::namespace('Gateway')->prefix('ipn')->name('ipn.')->group(function () {
-//     Route::post('paypal', 'paypal\ProcessController@ipn')->name('paypal');
-//     Route::get('paypal_sdk', 'paypal_sdk\ProcessController@ipn')->name('paypal_sdk');
-//     Route::post('perfect_money', 'perfect_money\ProcessController@ipn')->name('perfect_money');
-//     Route::post('stripe', 'stripe\ProcessController@ipn')->name('stripe');
-//     Route::post('stripe_js', 'stripe_js\ProcessController@ipn')->name('stripe_js');
-//     Route::post('stripe_v3', 'stripe_v3\ProcessController@ipn')->name('stripe_v3');
-//     Route::post('skrill', 'skrill\ProcessController@ipn')->name('skrill');
-//     Route::post('paytm', 'paytm\ProcessController@ipn')->name('paytm');
-//     Route::post('payeer', 'payeer\ProcessController@ipn')->name('payeer');
-//     Route::post('paystack', 'paystack\ProcessController@ipn')->name('paystack');
-//     Route::get('flutterwave/{trx}/{type}', 'flutterwave\ProcessController@ipn')->name('flutterwave');
-//     Route::post('voguepay', 'voguepay\ProcessController@ipn')->name('voguepay');
-//     Route::post('razorpay', 'razorpay\ProcessController@ipn')->name('razorpay');
-//     Route::post('instamojo', 'instamojo\ProcessController@ipn')->name('instamojo');
-//     Route::get('blockchain', 'blockchain\ProcessController@ipn')->name('blockchain');
-//     Route::get('blockio', 'blockio\ProcessController@ipn')->name('blockio');
-//     Route::post('coinpayments', 'coinpayments\ProcessController@ipn')->name('coinpayments');
-//     Route::post('coinpayments_fiat', 'coinpayments_fiat\ProcessController@ipn')->name('coinpayments_fiat');
-//     Route::post('coingate', 'coingate\ProcessController@ipn')->name('coingate');
-//     Route::post('coinbase_commerce', 'coinbase_commerce\ProcessController@ipn')->name('coinbase_commerce');
-//     Route::get('mollie', 'mollie\ProcessController@ipn')->name('mollie');
-//     Route::post('cashmaal', 'cashmaal\ProcessController@ipn')->name('cashmaal');
-// });
+Route::namespace('Gateway')->prefix('ipn')->name('ipn.')->group(function () {
+    Route::post('paypal', 'Gateway\paypal\ProcessController@ipn')->name('paypal');
+    Route::get('paypal_sdk', 'Gateway\paypal_sdk\ProcessController@ipn')->name('paypal_sdk');
+    Route::post('perfect_money', 'Gateway\perfect_money\ProcessController@ipn')->name('perfect_money');
+    Route::post('stripe', 'Gateway\stripe\ProcessController@ipn')->name('stripe');
+    Route::post('stripe_js', 'Gateway\stripe_js\ProcessController@ipn')->name('stripe_js');
+    Route::post('stripe_v3', 'Gateway\stripe_v3\ProcessController@ipn')->name('stripe_v3');
+    Route::post('skrill', 'Gateway\skrill\ProcessController@ipn')->name('skrill');
+    Route::post('paytm', 'Gateway\paytm\ProcessController@ipn')->name('paytm');
+    Route::post('payeer', 'Gateway\payeer\ProcessController@ipn')->name('payeer');
+    Route::post('paystack', 'Gateway\paystack\ProcessController@ipn')->name('paystack');
+    Route::get('flutterwave/{trx}/{type}', 'Gateway\flutterwave\ProcessController@ipn')->name('flutterwave');
+    Route::post('voguepay', 'Gateway\voguepay\ProcessController@ipn')->name('voguepay');
+    Route::post('razorpay', 'Gateway\razorpay\ProcessController@ipn')->name('razorpay');
+    Route::post('instamojo', 'Gateway\instamojo\ProcessController@ipn')->name('instamojo');
+    Route::get('blockchain', 'Gateway\blockchain\ProcessController@ipn')->name('blockchain');
+    Route::get('blockio', 'Gateway\blockio\ProcessController@ipn')->name('blockio');
+    Route::post('coinpayments', 'Gateway\coinpayments\ProcessController@ipn')->name('coinpayments');
+    Route::post('coinpayments_fiat', 'Gateway\coinpayments_fiat\ProcessController@ipn')->name('coinpayments_fiat');
+    Route::post('coingate', 'Gateway\coingate\ProcessController@ipn')->name('coingate');
+    Route::post('coinbase_commerce', 'Gateway\coinbase_commerce\ProcessController@ipn')->name('coinbase_commerce');
+    Route::get('mollie', 'Gateway\mollie\ProcessController@ipn')->name('mollie');
+    Route::post('cashmaal', 'Gateway\cashmaal\ProcessController@ipn')->name('cashmaal');
+});
 
 // User Support Ticket
 Route::prefix('ticket')->group(function () {
