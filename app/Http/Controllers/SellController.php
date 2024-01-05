@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Auth;
 
 class SellController extends Controller
 {
+    public $activeTemplate;
     public function __construct()
     {
         $this->activeTemplate = activeTemplate();
@@ -290,6 +291,33 @@ class SellController extends Controller
         $notify[] = ['success', 'Product has been remove from cart successfully'];
         return back()->withNotify($notify);
     }
+
+    public function emptyCart(Request $request, $order_number)
+    {
+        $order = Order::where('order_number', Crypt::decrypt($order_number))->get();
+        if($request->is('api/*') && empty($order) ){
+            $apidata['status'] = "Error";
+            $apidata['data'] = "";
+            $apidata['message'] = "No Product Added";
+            return $apidata;
+        }
+
+        foreach ($order as $item) {
+            $bump = BumpResponse::Where('order_id', $item->id);
+            $item->delete();
+            $bump->delete();
+        }
+        
+        if($request->is('api/*')){
+            $apidata['status'] = "Success";
+            $apidata['data'] = "";
+            $apidata['message'] = "Product has been remove from cart successfully";
+            return $apidata;
+        }
+        $notify[] = ['success', 'Product has been remove from cart successfully'];
+        return back()->withNotify($notify);
+    }
+    
     public function removewishlist($id)
     {
         $item = WishlistProduct::findOrFail(Crypt::decrypt($id));

@@ -40,6 +40,7 @@ Route::get('product-details/{slug}/{id}/{fetch}', 'SiteController@productDetails
 Route::post('product/add-to-cart', 'SellController@addToCart')->name('addtocart');
 Route::get('product/cart/{ordernumber?}', 'SellController@carts')->name('carts');
 Route::get('product/remove-cart/{id}', 'SellController@removeCart')->name('remove.cart');
+Route::get('product/empty-cart/{order_number}', 'SellController@emptyCart')->name('empty.cart');
 
 Route::post('auth/sign-up', 'Auth\RegisterController@register');
 Route::post('auth/sign-in', 'Auth\LoginController@login');
