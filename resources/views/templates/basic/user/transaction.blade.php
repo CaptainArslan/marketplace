@@ -36,10 +36,21 @@
 @push('script')
 <script>
     $(document).ready(function() {
+        var api = @json($api);
+        var token = @json($token);
+
+        let val = {
+            ":token": token,
+            ':api': api,
+            '&amp;': "&"
+        }
+
+        console.log(val);
+
         var table = $('#data-table').DataTable({
             processing: true,
             serverSide: true,
-            ajax: "{{ route('user.transaction') }}",
+            ajax: api ?  decodeURIComponent("{{ route('iframe.api.user.transaction', ['api' => ':api','token'=>':token']) }}").replace(/:token|:api|&amp;/gm, (m) => (val[m] ?? m)) : "{{ route('user.transaction') }}",
             columns: [{
                     data: 'created_at',
                     name: 'created_at'

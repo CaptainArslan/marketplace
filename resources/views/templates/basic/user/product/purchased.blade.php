@@ -91,7 +91,7 @@ $nid = null;
         var table = $('#data-table').DataTable({
             processing: true,
             serverSide: true,
-            ajax: decodeURIComponent("{{ route('user.purchased.product', ['api' => ':api','token'=>':token']) }}").replace(/:token|:api|&amp;/gm, (m) => (val[m] ?? m)),
+            ajax: api ? decodeURIComponent("{{ route('iframe.api.purchased.product', ['api' => ':api','token'=>':token']) }}").replace(/:token|:api|&amp;/gm, (m) => (val[m] ?? m)) : "{{ route('user.purchased.product') }}",
             columns: [{
                     data: 'code',
                     name: 'code'
