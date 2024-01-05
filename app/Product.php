@@ -19,10 +19,13 @@ class Product extends Model
     protected $hidden = [
         'shareable_link',
         'server',
-        
+
     ];
 
-    protected $with = ['user', 'sells'];
+    protected $with = [
+        'user',
+        // 'sells'
+    ];
     public function category()
     {
         return $this->belongsTo(Category::class);
