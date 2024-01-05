@@ -16,6 +16,8 @@ use Yajra\DataTables\Facades\DataTables;
 class TicketController extends Controller
 {
 
+    public $activeTemplate;
+
     public function __construct()
     {
         $this->activeTemplate = activeTemplate();
@@ -84,11 +86,6 @@ class TicketController extends Controller
                 ->rawColumns(['action', 'subject', 'status'])
                 ->make(true);
         }
-        
-        if(($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
-            $partial = false;
-        }
-
         return view($this->activeTemplate . 'user.support.index', get_defined_vars());
     }
     public function openSupportTicket(Request $request, $id = null)

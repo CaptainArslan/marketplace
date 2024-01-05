@@ -44,6 +44,7 @@
     $(document).ready(function() {
         "use strict";
 
+        
         var api = @json($api);
         var token = @json($token);
 
