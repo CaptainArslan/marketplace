@@ -51,14 +51,11 @@ Route::post('test/email', 'Auth\ForgotPasswordController@sendEmail');
 Route::middleware('jwt.verify')->group(function () {
     Route::post('auth/logout', 'Auth\LoginController@logout');
     Route::post('password/change', 'UserController@submitPassword');
-
     Route::post('checkout', 'SellController@checkoutPayment');
     Route::post('checkout/process', 'Gateway\PaymentController@paymentInsert');
     Route::post('payment/process', 'Gateway\stripe\ProcessController@ipnApi');
-
     Route::get('profile/setting', 'UserController@profile');
     Route::post('profile-setting', 'UserController@submitProfile');
-
     Route::get('user/puchased-list', 'UserController@purchasedProductApi');
 
     // prefix: user
