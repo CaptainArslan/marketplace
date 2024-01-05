@@ -245,6 +245,15 @@ class UserController extends Controller
         $page_title = 'Deposit History';
         $empty_message = 'No history found.';
         $user = auth()->user();
+
+        $api = false;
+        $token = '';
+        if (($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
+            $partial = false;
+            $api = true;
+            $token = $request->token;
+        }
+
         if ($request->ajax()) {
             $data = $user->deposits()->where('order_number', null)->with(['gateway'])->latest();
             return DataTables::of($data)
@@ -280,9 +289,7 @@ class UserController extends Controller
                 ->rawColumns(['action', 'status', 'update_status'])
                 ->make(true);
         }
-        if (($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
-            $partial = false;
-        }
+        
 
         return view($this->activeTemplate . 'user.deposit_history', get_defined_vars());
     }
