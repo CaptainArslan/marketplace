@@ -641,15 +641,17 @@ class UserController extends Controller
                 ->addColumn('action', function ($row) use ($api, $token) {
                     if ($row->status == 1) {
                         $url =   route('user.download', Crypt::encrypt($row->product->id));
+                        $invoiceUrl =  route('user.invoice', Crypt::encrypt($row->product->id));
                         if ($api == true) {
                             $url =   route('iframe.api.download', Crypt::encrypt($row->product->id)) . '?token=' . $token;
+                            $invoiceUrl =  route('iframe.api.invoice', Crypt::encrypt($row->product->id)) . '?token=' . $token;
                         }
 
                         $statusdata  = '<a href="' . $url . '"
                                                         class="icon-btn bg--primary download-file"><i
                                                             class="las la-download" data-bs-toggle="tooltip"
                                                             data-bs-placement="top" title="Download"></i></a>
-                                                    <a href="' . route('user.invoice', Crypt::encrypt($row->product->id)) . '"
+                                                    <a href="' . $invoiceUrl . '"
                                                         class="icon-btn bg--primary"><i class="las la-receipt"
                                                             data-bs-toggle="tooltip" data-bs-placement="top"
                                                             title="Invoice"></i></a>';

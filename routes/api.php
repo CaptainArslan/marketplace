@@ -75,5 +75,6 @@ Route::middleware('jwt.verify')->group(function () {
         Route::post('rating', 'UserController@rating')->name('rating');
         //Product Download
         Route::get('download/{id}', 'UserController@download')->name('download');
+        Route::get('invoice/{id}', 'UserController@invoice')->name('invoice');
     });
 });

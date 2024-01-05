@@ -179,6 +179,7 @@ return [
         
         // Jwt Provider
         Tymon\JWTAuth\Providers\LaravelServiceProvider::class,
+        ZanySoft\Zip\ZipServiceProvider::class,
 
     ],
 
@@ -232,7 +233,7 @@ return [
         'Validator' => Illuminate\Support\Facades\Validator::class,
         'View' => Illuminate\Support\Facades\View::class,
         'Image' => Intervention\Image\Facades\Image::class,
-
+        'Zip' => ZanySoft\Zip\Facades\Zip::class,
     ],
 
 ];
