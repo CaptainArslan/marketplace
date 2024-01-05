@@ -15,7 +15,14 @@ class Product extends Model
         'category_details' => 'array',
         'screenshot' => 'array',
     ];
-    protected $with = ['user','sells'];
+
+    protected $hidden = [
+        'shareable_link',
+        'server',
+        
+    ];
+
+    // protected $with = ['user', 'sells'];
     public function category()
     {
         return $this->belongsTo(Category::class);
@@ -74,4 +81,3 @@ class Product extends Model
         return $this->hasMany(CustomFieldResponse::class);
     }
 }
-?>

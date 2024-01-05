@@ -11,13 +11,13 @@ use Carbon\Carbon;
 class User extends Authenticatable implements JWTSubject
 {
 
-    use Notifiable,HasFactory;
+    use Notifiable, HasFactory;
     /**
      * The attributes that are mass assignable.
      *
      * @var array
      */
-     
+
     /**
      * Get the identifier that will be stored in the subject claim of the JWT.
      *
@@ -41,7 +41,7 @@ class User extends Authenticatable implements JWTSubject
     }
 
     protected $guarded = ['id'];
-    
+
     protected $fillable = [
         'firstname',
         'lastname',
@@ -74,7 +74,7 @@ class User extends Authenticatable implements JWTSubject
         'provider_id'
     ];
 
-    protected $with = ['usersubscription']; 
+    // protected $with = ['usersubscription'];
 
     /**
      * The attributes that should be hidden for arrays.
@@ -82,7 +82,24 @@ class User extends Authenticatable implements JWTSubject
      * @var array
      */
     protected $hidden = [
-        'password', 'remember_token',
+        'password',
+        'remember_token',
+        'username',
+        'address', 
+        'email',
+        'mobile',
+        'balance',
+        'earning',
+        'level_id',
+        'ev',
+        'sv',
+        'ver_code',
+        'ver_code_send_at',
+        'ts',
+        'tv',
+        'tsc',
+        'provider',
+        'provider_id',
     ];
 
     /**
@@ -98,7 +115,7 @@ class User extends Authenticatable implements JWTSubject
     ];
 
     protected $data = [
-        'data'=>1
+        'data' => 1
     ];
 
 
@@ -110,22 +127,22 @@ class User extends Authenticatable implements JWTSubject
 
     public function transactions()
     {
-        return $this->hasMany(Transaction::class)->orderBy('id','desc');
+        return $this->hasMany(Transaction::class)->orderBy('id', 'desc');
     }
 
     public function deposits()
     {
-        return $this->hasMany(Deposit::class)->where('status','!=',0);
+        return $this->hasMany(Deposit::class)->where('status', '!=', 0);
     }
 
     public function withdrawals()
     {
-        return $this->hasMany(Withdrawal::class)->where('status','!=',0);
+        return $this->hasMany(Withdrawal::class)->where('status', '!=', 0);
     }
 
     public function products()
     {
-        return $this->hasMany(Product::class)->where('status',1);
+        return $this->hasMany(Product::class)->where('status', 1);
     }
     public function customfields()
     {
@@ -133,7 +150,7 @@ class User extends Authenticatable implements JWTSubject
     }
     public function tempProducts()
     {
-        return $this->hasMany(TempProduct::class)->where('status',1);
+        return $this->hasMany(TempProduct::class)->where('status', 1);
     }
 
     public function comments()
@@ -143,7 +160,7 @@ class User extends Authenticatable implements JWTSubject
 
     public function levell()
     {
-        return $this->belongsTo(Level::class,'level_id');
+        return $this->belongsTo(Level::class, 'level_id');
     }
 
     public function buy()
@@ -153,17 +170,17 @@ class User extends Authenticatable implements JWTSubject
 
     public function sell()
     {
-        return $this->hasMany(Sell::class,'author_id');
+        return $this->hasMany(Sell::class, 'author_id');
     }
 
     public function order()
     {
-        return $this->hasMany(Order::class,'author_id');
+        return $this->hasMany(Order::class, 'author_id');
     }
 
     public function myOrder()
     {
-        return $this->hasMany(Order::class,'order_number');
+        return $this->hasMany(Order::class, 'order_number');
     }
 
     public function orderBuy()
@@ -179,8 +196,9 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(Rating::class);
     }
 
-    public function existedRating($id){
-        return $this->ratings->where('product_id',$id)->first();
+    public function existedRating($id)
+    {
+        return $this->ratings->where('product_id', $id)->first();
     }
     public function usersubscription()
     {
@@ -222,5 +240,4 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->where('sv', 1);
     }
-
 }

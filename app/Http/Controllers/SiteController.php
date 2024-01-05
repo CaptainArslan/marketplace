@@ -23,13 +23,14 @@ use Illuminate\Support\Facades\Validator;
 
 class SiteController extends Controller
 {
+    public $activeTemplate;
     public function __construct()
     {
         $this->activeTemplate = activeTemplate();
     }
 
     public function index($urlquery = null)
-    { 
+    {
 
         $count = Page::where('tempname', $this->activeTemplate)->where('slug', 'home')->count();
 
@@ -68,58 +69,56 @@ class SiteController extends Controller
 
             $sections[] = $catproduct;
         }
-        $apidata=[];
+        $apidata = [];
         $data['page_title'] = 'Home';
-        $data['categories'] = Category::where('status', 1)->with('products','subcategories')->get();
+        $data['categories'] = Category::where('status', 1)->with('products', 'subcategories')->get();
         $data['sections'] = Page::where('tempname', $this->activeTemplate)->where('slug', 'home')->firstOrFail();
-        $pagesections=$data['sections'];
-        if ($pagesections->secs != null){
-        foreach (json_decode($pagesections->secs) as $sec){
-            if($sec == 'featured_product'){
-                    $featuredProductContent = getContent('featured_product.content',true);
-    $featuredProducts = \App\Product::where('featured',1)->where('status',1)->whereHas('user', function ($query) {
-                            $query->where('status',1);
-                        })->whereHas('category', function ($query) {
-                            $query->where('status',1);
-                        })->whereHas('subcategory', function ($query) {
-                            $query->where('status',1);
-                        })->with(['subcategory','user'])->latest()->get();
-                        $apidata['featuredProductContent']=$featuredProductContent;
-                        $apidata['featuredProducts']=$featuredProducts;
-            }
-            if($sec == 'best_author_product'){
-                    $bestAuthorContent = getContent('best_author_product.content',true);
+        $pagesections = $data['sections'];
+        if ($pagesections->secs != null) {
+            foreach (json_decode($pagesections->secs) as $sec) {
+                if ($sec == 'featured_product') {
+                    $featuredProductContent = getContent('featured_product.content', true);
+                    $featuredProducts = \App\Product::where('featured', 1)->where('status', 1)->whereHas('user', function ($query) {
+                        $query->where('status', 1);
+                    })->whereHas('category', function ($query) {
+                        $query->where('status', 1);
+                    })->whereHas('subcategory', function ($query) {
+                        $query->where('status', 1);
+                    })->with(['subcategory', 'user'])->latest()->get();
+                    $apidata['featuredProductContent'] = $featuredProductContent;
+                    $apidata['featuredProducts'] = $featuredProducts;
+                }
+                if ($sec == 'best_author_product') {
+                    $bestAuthorContent = getContent('best_author_product.content', true);
 
-    $bestAuthorProducts = \App\Product::where('status', 1)->whereHas('user', function ($query) {
-            $query->where('status',1);
-        })->whereHas('category', function ($query) {
-            $query->where('status',1);
-        })->whereHas('subcategory', function ($query) {
-            $query->where('status',1);
-        })->selectRaw('products.*, (avg_rating*total_sell) as point')
-        ->orderBy('point', 'desc')
-        ->with(['subcategory','user'])->limit(12)->get();
-                        $apidata['bestAuthorContent']=$bestAuthorContent;
-                        $apidata['bestAuthorProducts']=$bestAuthorProducts;
+                    $bestAuthorProducts = \App\Product::where('status', 1)->whereHas('user', function ($query) {
+                        $query->where('status', 1);
+                    })->whereHas('category', function ($query) {
+                        $query->where('status', 1);
+                    })->whereHas('subcategory', function ($query) {
+                        $query->where('status', 1);
+                    })->selectRaw('products.*, (avg_rating*total_sell) as point')
+                        ->orderBy('point', 'desc')
+                        ->with(['subcategory', 'user'])->limit(12)->get();
+                    $apidata['bestAuthorContent'] = $bestAuthorContent;
+                    $apidata['bestAuthorProducts'] = $bestAuthorProducts;
+                }
             }
         }
 
-           
-}
-        
         $data['catsections'] = $sections;
         $data['catwithmostsold'] = $cats;
         $apidata['mostsoldproducts'] = $sections;
         $apidata['catwithmostsold'] = $cats;
         $apidata['imgpath'] = asset('assets/images/product/');
-        
-        $apidata['browsecategories']=$data['categories'];
-       
-       if(!is_null($urlquery) && $urlquery == 'homepage' ){
-        return response()->json($apidata);
-       }
 
- 
+        $apidata['browsecategories'] = $data['categories'];
+
+        if (!is_null($urlquery) && $urlquery == 'homepage') {
+            return response()->json($apidata);
+        }
+
+
         return view($this->activeTemplate . 'home', $data);
     }
 
@@ -297,13 +296,12 @@ class SiteController extends Controller
         return view($this->activeTemplate . 'author_profile', get_defined_vars());
     }
 
-    public function productSearch(Request $request,$urlquery=null)
+    public function productSearch(Request $request, $urlquery = null)
     {
 
-        if(empty($request->search) && $request->search==null){
+        if (empty($request->search) && $request->search == null) {
             $notify[] = ['error ', 'Please Enter Some text'];
             return back()->withNotify($notify);
-
         }
 
         $page_title = 'Products for ' . $request->search;
@@ -334,16 +332,16 @@ class SiteController extends Controller
 
         $min = floor($products->min('regular_price'));
         $max = ceil($products->max('regular_price'));
-        $apidata=[];
-        $apidata['allProducts']=$products;
-        $apidata['categoryForSearchPage']=$categoryForSearchPage;
-        $apidata['minPrice']=$min;
-        $apidata['maxPrice']=$max;
-        $apidata['allTags']=$tags;
-        $apidata['page_title']=$page_title;
-       if(!is_null($urlquery) && $urlquery == 'query' ){
-        return response()->json($apidata);
-       }
+        $apidata = [];
+        $apidata['allProducts'] = $products;
+        $apidata['categoryForSearchPage'] = $categoryForSearchPage;
+        $apidata['minPrice'] = $min;
+        $apidata['maxPrice'] = $max;
+        $apidata['allTags'] = $tags;
+        $apidata['page_title'] = $page_title;
+        if (!is_null($urlquery) && $urlquery == 'query') {
+            return response()->json($apidata);
+        }
 
         return view($this->activeTemplate . 'search', compact('page_title', 'empty_message', 'products', 'tags', 'categoryForSearchPage', 'min', 'max', 'wordsearch'));
     }
@@ -435,7 +433,7 @@ class SiteController extends Controller
             'html' => $view,
         ]);
     }
-    public function productFilter(Request $request,$urlquery = null)
+    public function productFilter(Request $request, $urlquery = null)
     {
         // dd($request->all());
         $validate = Validator::make($request->all(), [
@@ -515,20 +513,20 @@ class SiteController extends Controller
         $products = $query->with(['user', 'subcategory'])->get();
 
         $empty_message = 'No product found';
-        
+
         $view = view($this->activeTemplate . 'filtered_search', compact('products', 'empty_message', 'tags', 'categories'))->render();
         $min = floor($products->min('regular_price'));
         $max = ceil($products->max('regular_price'));
         $tags = $this->getTags($products->pluck('tag'));
-        $apidata=[];
-        $apidata['allProducts']=$products;
-        $apidata['categoryForSearchPage']=$categories;
-        $apidata['minPrice']=$min;
-        $apidata['maxPrice']=$max;
-        $apidata['allTags']=$tags;
-       if(!is_null($urlquery) && $urlquery == 'data' ){
-        return response()->json($apidata);
-       }
+        $apidata = [];
+        $apidata['allProducts'] = $products;
+        $apidata['categoryForSearchPage'] = $categories;
+        $apidata['minPrice'] = $min;
+        $apidata['maxPrice'] = $max;
+        $apidata['allTags'] = $tags;
+        if (!is_null($urlquery) && $urlquery == 'data') {
+            return response()->json($apidata);
+        }
 
         return response()->json([
             'html' => $view,
@@ -550,27 +548,27 @@ class SiteController extends Controller
         return $tags;
     }
 
-    public function productDetails($slug, $id,$fetch = null)
+    public function productDetails($slug, $id, $fetch = null)
     {
         $page_title = 'Product Details';
         $product = Product::where('status', 1)->with(['category', 'user', 'ratings', 'bumps', 'productcustomfields'])->findOrFail($id);
         $encryptedProductId = Crypt::encrypt($product->id);
-    
+
         if (auth()->user()) {
             $wishlist = WishlistProduct::where('user_id', auth()->user()->id)->first();
         }
         $moreProducts = Product::where('user_id', $product->user_id)->where('status', 1)->with(['subcategory', 'user', 'ratings'])->limit(6)->inRandomOrder()->get();
         $levels = Level::get();
         $ratings = $product->ratings()->with('user')->paginate(getPaginate());
-        $apidata=[];
-        $apidata['product']=$product;
-        $apidata['moreProducts']=$moreProducts;
-        $apidata['levels']=$levels;
-        $apidata['ratings']=$ratings;
+        $apidata = [];
+        $apidata['product'] = $product;
+        $apidata['moreProducts'] = $moreProducts;
+        $apidata['levels'] = $levels;
+        $apidata['ratings'] = $ratings;
         $apidata['encrypted_id'] = $encryptedProductId;
-         if(!is_null($fetch) && $fetch == 'fetch' ){
+        if (!is_null($fetch) && $fetch == 'fetch') {
             return response()->json($apidata);
-          }
+        }
         return view($this->activeTemplate . 'productDetails', get_defined_vars());
     }
 
@@ -617,39 +615,45 @@ class SiteController extends Controller
         return view($this->activeTemplate . 'products', compact('page_title', 'products'));
     }
 
-    public function allProducts($fetch=null)
+    public function allProducts($fetch = null, Request $request)
     {
         $page_title = 'All Products';
         $empty_message = 'No data Found';
         $products = Product::where('status', 1)->whereHas('user', function ($query) {
             $query->where('status', 1);
-        })->whereHas('category', function ($query) {
+        })
+        ->whereHas('category', function ($query) {
             $query->where('status', 1);
-        })->whereHas('subcategory', function ($query) {
+        })
+        ->whereHas('subcategory', function ($query) {
             $query->where('status', 1);
-        })->with(['subcategory', 'user'])->latest()->paginate(getPaginate());
+        })
+        ->with(['subcategory', 'user'])
+        ->with('user')
+        // ->with('sells')
+        ->latest()
+        ->paginate(getPaginate());
 
         $tags = $this->getTags($products->pluck('tag'));
         $categoryForSearchPage = Category::where('status', 1)->latest()->get();
 
         $min = floor($products->min('regular_price'));
         $max = ceil($products->max('regular_price'));
-        $apidata=[];
-        $apidata['allProducts']=$products;
-        $apidata['categoryForSearchPage']=$categoryForSearchPage;
-        $apidata['minPrice']=$min;
-        $apidata['maxPrice']=$max;
-        $apidata['allTags']=$tags;
-             if(!is_null($fetch) && $fetch == 'fetch' ){
-                return response()->json($apidata);
-              }
-        
-        
+        $apidata = [];
+        $apidata['allProducts'] = $products;
+        $apidata['categoryForSearchPage'] = $categoryForSearchPage;
+        $apidata['minPrice'] = $min;
+        $apidata['maxPrice'] = $max;
+        $apidata['allTags'] = $tags;
+
+        if ($request->is('api/*')) {
+            return $this->respondWithSuccess($apidata, 'All Products');
+        }
+
         return view($this->activeTemplate . 'search', compact('page_title', 'empty_message', 'products', 'tags', 'categoryForSearchPage', 'min', 'max'));
     }
     public function reset($id)
     {
-
         $products = Product::where('user_id', $id)->where('status', 1)->whereHas('user', function ($query) {
             $query->where('status', 1);
         })->whereHas('category', function ($query) {
