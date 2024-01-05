@@ -305,17 +305,19 @@ class SellController extends Controller
 
         foreach ($order as $item) {
             $bump = BumpResponse::Where('order_id', $item->id);
+            if ($bump->count() > 0) {
+                $bump->delete();
+            }
             $item->delete();
-            $bump->delete();
         }
         
         if($request->is('api/*')){
             $apidata['status'] = "Success";
             $apidata['data'] = "";
-            $apidata['message'] = "Product has been remove from cart successfully";
+            $apidata['message'] = "Product has been remove from your cart successfully";
             return $apidata;
         }
-        $notify[] = ['success', 'Product has been remove from cart successfully'];
+        $notify[] = ['success', 'Product has been remove from your cart successfully'];
         return back()->withNotify($notify);
     }
     
