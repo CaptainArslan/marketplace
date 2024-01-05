@@ -296,7 +296,8 @@ class SellController extends Controller
     public function emptyCart(Request $request, $order_number)
     {
         $order = Order::where('order_number', Crypt::decrypt($order_number))->get();
-        if($request->is('api/*') && empty($order) ){
+
+        if($request->is('api/*') && $order->count() == 0 ){
             $apidata['status'] = "Error";
             $apidata['data'] = "";
             $apidata['message'] = "No Product Added";
