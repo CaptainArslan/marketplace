@@ -2,38 +2,38 @@
 
 namespace App\Http\Controllers;
 
-use App\CommissionLog;
-use App\CustomCss;
-use App\CustomField;
-use App\CustomfieldItem;
-use App\CustomFieldResponse;
-use App\EmailTemplateSetting;
-use App\GeneralSetting;
-use App\Lib\GoogleAuthenticator;
-use App\Lib\StrongPassword;
-use App\Product;
-use App\Rating;
-use App\Notification;
-use App\Sell;
-use App\Subscription;
-use App\Transaction;
-use App\User;
-use App\UserSubscription;
-use App\Withdrawal;
-use App\WithdrawMethod;
-use EllipticCurve\Utils\File as UtilsFile;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Yajra\DataTables\DataTables;
-use Image;
-use stdClass;
-use Str;
 use File;
+use Image;
+use App\Sell;
+use App\User;
+use stdClass;
 use Exception;
+use App\Rating;
+use App\Product;
+use App\CustomCss;
+use App\Withdrawal;
+use App\CustomField;
+use App\Transaction;
+use App\Notification;
+use App\Subscription;
+use App\CommissionLog;
+use App\GeneralSetting;
+use App\WithdrawMethod;
+use App\CustomfieldItem;
+use App\UserSubscription;
+use App\Lib\StrongPassword;
+use Illuminate\Support\Str;
+use App\CustomFieldResponse;
+use Illuminate\Http\Request;
+use App\EmailTemplateSetting;
+use App\Lib\GoogleAuthenticator;
+use Yajra\DataTables\DataTables;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Validator;
+use EllipticCurve\Utils\File as UtilsFile;
 
 class UserController extends Controller
 {
@@ -289,7 +289,7 @@ class UserController extends Controller
                 ->rawColumns(['action', 'status', 'update_status'])
                 ->make(true);
         }
-        
+
 
         return view($this->activeTemplate . 'user.deposit_history', get_defined_vars());
     }
@@ -638,9 +638,14 @@ class UserController extends Controller
                     return $ticket;
                 })
 
-                ->addColumn('action', function ($row) {
+                ->addColumn('action', function ($row) use ($api, $token) {
                     if ($row->status == 1) {
-                        $statusdata  = '<a href="' . route('user.download', Crypt::encrypt($row->product->id)) . '"
+                        $url =   route('user.download', Crypt::encrypt($row->product->id));
+                        if ($api == true) {
+                            $url =   route('iframe.api.download', Crypt::encrypt($row->product->id)) . '?token=' . $token;
+                        }
+
+                        $statusdata  = '<a href="' . $url . '"
                                                         class="icon-btn bg--primary download-file"><i
                                                             class="las la-download" data-bs-toggle="tooltip"
                                                             data-bs-placement="top" title="Download"></i></a>

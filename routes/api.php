@@ -71,5 +71,7 @@ Route::middleware('jwt.verify')->group(function () {
         Route::get('/view/{ticket}', 'TicketController@viewTicket')->name('ticket.show');
         Route::post('/reply/{ticket}', 'TicketController@replyTicket')->name('ticket.reply');
         Route::post('rating', 'UserController@rating')->name('rating');
+        //Product Download
+        Route::get('download/{id}', 'UserController@download')->name('download');
     });
 });
