@@ -240,6 +240,7 @@ class SellController extends Controller
                     $apidata['status'] = "Success";
                     $orders = Order::with('product', 'bumpresponses')->where('order_number', $ordernumber)->get()->map(function ($order) {
                         $order->encrypted_id = Crypt::encrypt($order->id);
+                        $order->encrypted_order_number = Crypt::encrypt($order->order_number);
                         return $order;
                     });
                     // $balance = auth()->user()->balance ?? 0;
