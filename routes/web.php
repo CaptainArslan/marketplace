@@ -13,7 +13,7 @@ Route::get('/clear', function () {
  */
 
 
-Route::namespace('Gateway')->prefix('ipn')->name('ipn.')->group(function () {
+Route::prefix('ipn')->name('ipn.')->group(function () {
     Route::post('paypal', 'Gateway\paypal\ProcessController@ipn')->name('paypal');
     Route::get('paypal_sdk', 'Gateway\paypal_sdk\ProcessController@ipn')->name('paypal_sdk');
     Route::post('perfect_money', 'Gateway\perfect_money\ProcessController@ipn')->name('perfect_money');
@@ -22,7 +22,7 @@ Route::namespace('Gateway')->prefix('ipn')->name('ipn.')->group(function () {
     Route::post('stripe_v3', 'Gateway\stripe_v3\ProcessController@ipn')->name('stripe_v3');
     Route::post('skrill', 'Gateway\skrill\ProcessController@ipn')->name('skrill');
     Route::post('paytm', 'Gateway\paytm\ProcessController@ipn')->name('paytm');
-    Route::post('payeer', 'Gateway\payeer\ProcessController@ipn')->name('payeer');
+    // Route::post('payeer', 'Gateway\payeer\ProcessController@ipn')->name('payeer');
     Route::post('paystack', 'Gateway\paystack\ProcessController@ipn')->name('paystack');
     Route::get('flutterwave/{trx}/{type}', 'Gateway\flutterwave\ProcessController@ipn')->name('flutterwave');
     Route::post('voguepay', 'Gateway\voguepay\ProcessController@ipn')->name('voguepay');
