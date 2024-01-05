@@ -15,10 +15,9 @@ class CheckSellerStatus
      * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
     public function handle(Request $request, Closure $next)
-    {
-        if (auth()->user()->seller == 1) {
+    {   if(auth()->user()->seller == 1){
             return $next($request);
-        }
-        abort(404);
+    }
+abort(404);
     }
 }

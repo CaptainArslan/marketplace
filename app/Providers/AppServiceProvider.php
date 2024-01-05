@@ -56,7 +56,6 @@ class AppServiceProvider extends ServiceProvider
         $viewShare['partial'] = true;
 
         view()->share($viewShare);
-        
 
         view()->composer('admin.partials.sidenav', function ($view) {
             $view->with([

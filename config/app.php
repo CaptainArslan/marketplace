@@ -162,6 +162,7 @@ return [
         Illuminate\Validation\ValidationServiceProvider::class,
         Illuminate\View\ViewServiceProvider::class,
 
+
         /*
          * Application Service Providers...
          */
@@ -170,9 +171,14 @@ return [
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
-        
-        Intervention\Image\ImageServiceProvider::class,
         Yajra\DataTables\DataTablesServiceProvider::class,
+        
+        
+        // Package Service Providers...
+        // Intervention\Image\ImageServiceProvider::class,
+        
+        // Jwt Provider
+        Tymon\JWTAuth\Providers\LaravelServiceProvider::class,
 
     ],
 
@@ -228,4 +234,5 @@ return [
         'Image' => Intervention\Image\Facades\Image::class,
 
     ],
+
 ];

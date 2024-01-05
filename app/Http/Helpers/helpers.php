@@ -1,20 +1,21 @@
 <?php
 
-use App\User;
-use App\Level;
-use App\GhlAuth;
-use App\Product;
 use App\Category;
 use App\CustomCss;
-use App\SubCategory;
 use App\GeneralSetting;
+use App\GhlAuth;
+use App\Level;
+use App\Product;
+use App\SubCategory;
+use App\User;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Facades\Image;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
-use Illuminate\Support\Facades\Crypt;
-use Intervention\Image\Facades\Image;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Pagination\LengthAwarePaginator;
 
 function sidebarVariation()
 {
@@ -515,8 +516,7 @@ function getImage($image, $size = null)
         return route('placeholderImage', $size);
     }
 }
-function getnotifycount()
-{
+function getnotifycount(){
     $notifycount = App\Notification::where('user_id', auth()->user()->id)
         ->where('mark_read', 0)
         ->where(function ($query) {
@@ -524,7 +524,8 @@ function getnotifycount()
         })
         ->count();
     session()->put('pcount', $notifycount);
-    return $notifycount;
+        return $notifycount;
+
 }
 function findcustomemail($pid)
 {
@@ -643,6 +644,7 @@ function send_email($user, $type = null, $shortCodes = [], $author = null)
 
     $message = shortCodeReplacer("{{name}}", $user->username, $general->email_template);
     $message = shortCodeReplacer("{{message}}", $email_template->email_body, $message);
+    
 
     if (!is_null($author) && !is_null($author->company_logo) && ($email_template->act != "PASS_RESET_CODE" || "PASS_RESET_DONE" || "EVER_CODE" || "SEVER_CODE" || "2FA_ENABLE" || "2FA_DISABLE" || "ADMIN_SUPPORT_REPLY")) {
         $emaillogo = getImage(imagePath()['profile']['user']['path'] . '/' . $author->company_logo, imagePath()['profile']['user']['size']);
@@ -660,6 +662,7 @@ function send_email($user, $type = null, $shortCodes = [], $author = null)
     foreach ($shortCodes as $code => $value) {
         $message = shortCodeReplacer('{{' . $code . '}}', $value, $message);
     }
+    
     $config = $general->mail_config;
 
     if ($config->name == 'php') {
@@ -680,10 +683,6 @@ function send_email($user, $type = null, $shortCodes = [], $author = null)
         }
     }
 }
-
-
-
-
 function addcontacttoghl($buyer, $seller)
 {
     $find = GhlAuth::where('user_id', $seller->id)->first();
@@ -1403,19 +1402,9 @@ function ghl_token($request, $type = '')
 
 function getscript($gen)
 {
+
     return $gen->suggestion_box;
 }
-
-function generateSSOUrl($base_url, $secret, $id)
-{
-    // dd($base_url, $secret, $id);
-    $signature = hash_hmac('sha256', $base_url, $secret);
-    $signature = $signature . '.' . $id;
-    $sso_url = "{$base_url}?signature={$signature}";
-
-    return $sso_url;
-}
-
 function verifySOSignature($ssoUrl, $secret)
 {
     // Parse the SSO URL
@@ -1452,3 +1441,4 @@ if (!function_exists('extractBearerToken')) {
         return null;
     }
 }
+

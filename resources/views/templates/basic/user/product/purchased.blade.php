@@ -287,8 +287,6 @@ $nid = null;
                     });
                 }
                 var newUrl = api ? decodeURIComponent("{{ route('iframe.api.rating', ['token'=>':token']) }}").replace(/:token|&amp;/gm, (m) => (val[m] ?? m)) : "{{ route('user.rating') }}";
-
-                console.log(data.product.id);
                 var review = `<div class="modal fade" id=reviewModal${data.id} data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
                                 aria-labelledby="staticBackdropLabel" aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered">

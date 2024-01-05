@@ -6,11 +6,12 @@ use App\BuyerSellerMeeting;
 use App\Http\Controllers\Controller;
 use App\Notification;
 use App\Sell;
+use Auth;
 use Illuminate\Http\Request;
+use stdClass;
 
 class NotificationController extends Controller
 {
-    public $activeTemplate ;
     //
     public function __construct()
     {

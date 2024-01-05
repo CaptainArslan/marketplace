@@ -13,6 +13,7 @@ class BumpResponse extends Model
     protected $fillable = [
         'field_value',
     ];
+    
     protected $with = ['bump'];
 
     public function bump()

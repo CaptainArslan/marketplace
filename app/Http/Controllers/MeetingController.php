@@ -14,7 +14,6 @@ use Yajra\DataTables\DataTables;
 
 class MeetingController extends Controller
 {
-    public $activeTemplate;
     //
     public function __construct()
     {
@@ -92,6 +91,8 @@ class MeetingController extends Controller
 
         return view($this->activeTemplate . 'user.zoommeeting.index', get_defined_vars());
     }
+    
+    
     public function newMeeting($id)
     {
         $page_title = 'New Meeting';

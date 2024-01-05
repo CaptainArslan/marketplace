@@ -14,7 +14,7 @@ class Kernel extends HttpKernel
      * @var array
      */
     protected $middleware = [
-        \App\Http\Middleware\TrustHosts::class,
+         \App\Http\Middleware\TrustHosts::class,
         \App\Http\Middleware\TrustProxies::class,
         \Fruitcake\Cors\HandleCors::class,
         \App\Http\Middleware\CheckForMaintenanceMode::class,
@@ -39,7 +39,7 @@ class Kernel extends HttpKernel
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\LanguageMiddleware::class,
         ],
-        'checkseller' => [\App\Http\Middleware\CheckSellerStatus::class,],
+         'checkseller' => [\App\Http\Middleware\CheckSellerStatus::class,],
 
         'api' => [
             'throttle:60,1',
@@ -81,5 +81,6 @@ class Kernel extends HttpKernel
 
         // Jwt token verification
         'jwt.verify' => \App\Http\Middleware\JwtVerifyToken::class,
+
     ];
 }

@@ -15,11 +15,11 @@ class ProductBump extends Model
         'price',
         'min_quantity',
     ];
- public function product()
+    public function product()
     {
         return $this->belongsTo(Product::class);
     }
- public function bumpresponses()
+    public function bumpresponses()
     {
         return $this->hasMany(BumpResponse::class);
     }

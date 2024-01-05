@@ -75,13 +75,12 @@ class ForgotPasswordController extends Controller
 
         $userIpInfo = getIpInfo();
         $userBrowserInfo = osBrowser();
-
         try {
             Mail::to($user->email)->send(new ForgetPassword($code));
         } catch (\Throwable $th) {
             Log::error('Error occured while sending forget password email! ' . $th->getMessage());
             if ($request->is('api/*')) {
-                return $this->respondWithError('Error Occured while sending email!' . $th->getMessage());
+                return $this->respondWithError('Error Occured while sending email!');
             }
             $notify[] = ['error', 'Error Occured while sending email!'];
             return redirect()->route('user.password.code_verify')->withNotify($notify);
@@ -98,15 +97,14 @@ class ForgotPasswordController extends Controller
         return redirect()->route('user.password.code_verify')->withNotify($notify);
     }
 
-    public function codeVerify()
-    {
+    public function codeVerify(){
         $page_title = 'Account Recovery';
         $email = session()->get('pass_res_mail');
         if (!$email) {
-            $notify[] = ['error', 'Opps! session expired'];
+            $notify[] = ['error','Opps! session expired'];
             return redirect()->route('user.password.request')->withNotify($notify);
         }
-        return view(activeTemplate() . 'user.auth.passwords.code_verify', compact('page_title', 'email'));
+        return view(activeTemplate().'user.auth.passwords.code_verify',compact('page_title','email'));
     }
 
     public function verifyCode(Request $request)
@@ -163,32 +161,60 @@ class ForgotPasswordController extends Controller
         $validator = $validator = Validator::make($request->all(), [
             'email' => 'required|email',
         ]);
-        
         if ($validator->fails()) {
             return $this->respondWithError($validator->errors()->first());
         }
         $user = User::where('email', $request->email)->first();
-
-        if ($user) {
+        
+        if($user){     
             $userIpInfo = getIpInfo();
             $userBrowserInfo = osBrowser();
             $code = rand(100000, 9999999);
-
-            try {
-                $email = send_email($user, 'PASS_RESET_CODE', [
+            
+            
+            try{
+                send_email($user, 'PASS_RESET_CODE', [
                     'code' => $code,
                     'operating_system' => @$userBrowserInfo['os_platform'],
                     'browser' => @$userBrowserInfo['browser'],
                     'ip' => @$userIpInfo['ip'],
                     'time' => @$userIpInfo['time']
                 ]);
-
+                    
                 return $this->respondWithSuccess($email, 'Please check your email to get OTP! ');
-            } catch (\Exception $e) {
+            }catch(\Exception $e){
                 return $this->respondWithError('Error Occured while sending Email! ' . $e->getMessage());
             }
-        } else {
+    
+            
+        }else{
             return $this->respondWithError('User Not Found!');
         }
     }
+    
+    public function changePassword(Request $request)
+    {
+        dd($request->all());
+        $validator = $validator = Validator::make($request->all(), [
+            'current_password' => 'required',
+            'password' => 'required|min:6|confirmed',
+        ]);
+        
+        if ($validator->fails()) {
+            return $this->respondWithError($validator->errors()->first());
+        }
+        
+        $user = Auth::user();
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json(['error' => 'Current password is incorrect'], 401);
+        }
+
+        $user->update([
+            'password' => bcrypt($request->new_password),
+        ]);
+
+        return response()->json(['message' => 'Password changed successfully']);
+    }
+
 }

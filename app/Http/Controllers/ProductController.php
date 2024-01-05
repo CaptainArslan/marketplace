@@ -27,8 +27,6 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
-    public $activeTemplate;
-
     public function __construct()
     {
         $this->activeTemplate = activeTemplate();
@@ -132,23 +130,25 @@ class ProductController extends Controller
         // $products = ->paginate(getPaginate());
         return view($this->activeTemplate . 'user.product.index', get_defined_vars());
     }
-public function getShortcode($id){
-    if($id){
-      $product = Product::where('status', '!=', 4)
-    ->where('user_id', auth()->user()->id)
-    ->where('sub_category_id', $id) 
-    ->orderBy('created_at', 'desc') 
-    ->first(); 
-    if($product){
-         return response()->json(['status'=>'success','code'=>$product->product_code]);
-    }else{
-        return response()->json(['status'=>'success','code'=>'NoProduct']);
+    
+    public function getShortcode($id){
+        if($id){
+          $product = Product::where('status', '!=', 4)
+        ->where('user_id', auth()->user()->id)
+        ->where('sub_category_id', $id) 
+        ->orderBy('created_at', 'desc') 
+        ->first(); 
+        if($product){
+             return response()->json(['status'=>'success','code'=>$product->product_code]);
+        }else{
+            return response()->json(['status'=>'success','code'=>'NoProduct']);
+        }
+       
+        }else{
+            return "";
+        }
     }
-   
-    }else{
-        return "";
-    }
-}
+    
     public function newProduct()
     {
         $page_title = 'New Product';
@@ -816,13 +816,11 @@ public function getShortcode($id){
     }
     public function deleteProduct(Request $request)
     {
-
         $request->validate([
             'product_id' => 'required'
         ]);
 
         $product = Product::findOrFail(Crypt::decrypt($request->product_id));
-        dd($product->toArray());
 
         $product->status = 4;
         $product->save();

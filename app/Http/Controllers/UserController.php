@@ -2,86 +2,50 @@
 
 namespace App\Http\Controllers;
 
+use App\CommissionLog;
+use App\CustomCss;
+use App\CustomField;
+use App\CustomfieldItem;
+use App\CustomFieldResponse;
+use App\EmailTemplateSetting;
+use App\GeneralSetting;
+use App\Lib\GoogleAuthenticator;
+use App\Lib\StrongPassword;
+use App\Product;
+use App\Rating;
+use App\Notification;
+use App\Sell;
+use App\Subscription;
+use App\Transaction;
+use App\User;
+use App\UserSubscription;
+use App\Withdrawal;
+use App\WithdrawMethod;
+use EllipticCurve\Utils\File as UtilsFile;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Yajra\DataTables\DataTables;
+use Image;
+use stdClass;
 use Str;
 use File;
-use App\Sell;
-use App\User;
-use stdClass;
 use Exception;
-use App\Rating;
-use App\Product;
-use App\CustomCss;
-use App\Withdrawal;
-use App\CustomField;
-use App\Transaction;
-use App\Notification;
-use App\CommissionLog;
-use App\GeneralSetting;
-use App\WithdrawMethod;
-use App\CustomfieldItem;
-use App\UserSubscription;
-use App\Lib\StrongPassword;
-use App\CustomFieldResponse;
-use Illuminate\Http\Request;
-use App\EmailTemplateSetting;
-use App\Lib\GoogleAuthenticator;
-use Yajra\DataTables\DataTables;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
-
-    public $activeTemplate;
-
     public function __construct()
     {
         $this->activeTemplate = activeTemplate();
     }
 
-    // if ($request->is('api/*') && $request->signature) {
-    //     $signature = $request->signature;
-    //     $encId = getLastPartWithoutDots($signature);
-    //     if ($encId == null) {
-    //         return $this->respondWithError('Users invalid signature!');
-    //     }
-
-    //     $decryptedId = Crypt::decryptString($encId);
-    //     $user = User::findOrFail($decryptedId);
-    //     if(!$user) {
-    //         return $this->respondWithError('unauthorized!');
-    //     }
-    //     auth()->login($user);
-
-    //     $parts = explode('.', $signature);
-
-    //     $signature = $parts[0];
-
-    //     // dd($signature, $request->fullUrl(), $request->query('signature'));
-
-    //     dd( $request->except('signature'));
-    //     $parts = explode('.', $request->fullUrl());
-    //     array_pop($parts);
-    //     $newBaseUrl = implode('.', $parts);
-
-    //     dd($newBaseUrl, $signature);
-
-    //     $res = verifySOSignature($newBaseUrl, $signature);
-
-    //     if (!$res) {
-    //         return $this->respondWithError('not verfied!');
-    //     } else {
-    //         dd('verified');
-    //     }
-    // }
-    public function home(Request $request, $signature = null)
+    public function home(Request $request)
     {
         $page_title = 'Dashboard';
-        $user = auth()->user() ?? auth('user')->user();
-
+        $user = auth()->user();
         $uploadedProductCount = Product::where('user_id', $user->id)->where('status', 1)->count();
         $purchasedProductCount = Sell::where('user_id', $user->id)->where('status', 1)->count();
         $transactionCount = Transaction::where('user_id', $user->id)->count();
@@ -100,8 +64,8 @@ class UserController extends Controller
 
         $thisMonthRealeased = $user->products()->whereMonth('created_at', now())->where('status', 1)->count();
         $thisMonthPurchased = $user->buy()->whereMonth('created_at', now())->where('status', 1)->count();
-
-        if (($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
+        
+        if(($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
             $partial = false;
         }
 
@@ -110,19 +74,19 @@ class UserController extends Controller
 
     public function profile(Request $request)
     {
-
+        
         $data['page_title'] = "Profile Setting";
         $data['user'] = auth()->user() ?? auth('user')->user();
         $data['user']->base_url = url('/assets/images/user/profile/');
-        if ($request->is('api/*')) {
+        if($request->is('api/*')) {
             return $this->respondWithSuccess($data['user'], 'User Profile');
         }
         return view($this->activeTemplate . 'user.profile-setting', $data);
     }
-
+ 
     public function submitProfile(Request $request)
     {
-        if ($request->is('api/*')) {
+        if($request->is('api/*')){
             $validator = Validator::make($request->all(), [
                 'firstname' => 'required|string|max:50',
                 'lastname' => 'required|string|max:50',
@@ -182,7 +146,6 @@ class UserController extends Controller
             $in['image'] = uploadImage($image, $path, $size, $user->image);
             $user->image = $in['image'];
         }
-
         if ($request->hasFile('logoimage')) {
             $image = $request->file('logoimage');
             $path = imagePath()['profile']['user']['path'];
@@ -203,13 +166,12 @@ class UserController extends Controller
                 return back()->withNotify(['error', 'Could not upload the image.']);
             }
         };
-
         $user->save();
-
-        if ($request->is('api/*')) {
-            return $this->respondWithSuccess($user, 'Profile Updated successfully!');
+        
+        if($request->is('api/*')){
+             return $this->respondWithSuccess($user, 'Profile Updated successfully!');
         }
-
+        
         $notify[] = ['success', 'Profile Updated successfully.'];
         return back()->withNotify($notify);
     }
@@ -239,7 +201,7 @@ class UserController extends Controller
             if ($validator->fails()) {
                 return $this->respondWithError($validator->errors()->first());
             }
-        } else {
+        }  else {
             $this->validate($request, [
                 'current_password' => 'required',
                 'password' => ['required', 'confirmed', $password_validation],
@@ -248,20 +210,20 @@ class UserController extends Controller
 
         try {
             $user = auth()->user();
-            if ($request->is('api/*')) {
+            if($request->is('api/*')){
                 $user = auth('user')->user();
             }
             if (Hash::check($request->current_password, $user->password)) {
                 $password = Hash::make($request->password);
                 $user->password = $password;
                 $user->save();
-                if ($request->is('api/*')) {
+                if($request->is('api/*')){
                     return $this->respondWithSuccess(null, 'Password has been updated successfully!');
                 }
                 $notify[] = ['success', 'Password Changes successfully.'];
                 return back()->withNotify($notify);
             } else {
-                if ($request->is('api/*')) {
+                if($request->is('api/*')){
                     return $this->respondWithError('Current password does not matched!');
                 }
                 $notify[] = ['error', 'Current password not match.'];
@@ -280,7 +242,7 @@ class UserController extends Controller
     {
         $page_title = 'Deposit History';
         $empty_message = 'No history found.';
-        $user = auth()->user() ?? auth('user')->user();
+        $user = auth()->user();
         if ($request->ajax()) {
             $data = $user->deposits()->where('order_number', null)->with(['gateway'])->latest();
             return DataTables::of($data)
@@ -309,18 +271,17 @@ class UserController extends Controller
                 ->addColumn('action', function ($row) {
                     $general = GeneralSetting::first();
                     $btn = '<a href="javascript:void(0)" class="icon-btn bg--primary approveBtn"
-                                                    data-bs-toggle="modal" data-bs-target="#approveModal"><i class="las la-desktop" data-bs-toggle="tooltip" data-bs-placement="top" title=Details></i></a>';
+                                data-bs-toggle="modal" data-bs-target="#approveModal"><i class="las la-desktop" data-bs-toggle="tooltip" data-bs-placement="top" title=Details></i></a>';
 
                     return $btn;
                 })
                 ->rawColumns(['action', 'status', 'update_status'])
                 ->make(true);
         }
-
-        if (($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
+        if(($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
             $partial = false;
         }
-
+        
         return view($this->activeTemplate . 'user.deposit_history', get_defined_vars());
     }
 
@@ -717,6 +678,7 @@ class UserController extends Controller
 
         return view($this->activeTemplate . 'user.product.purchased', get_defined_vars());
     }
+    
     public function purchasedProductApi(Request $request)
     {
         $user = auth()->user() ?? auth('user')->user();
@@ -726,24 +688,17 @@ class UserController extends Controller
 
     public function rating(Request $request)
     {
-        // dd($request->all());
+
         $request->validate([
             'rating' => 'required|integer|gt:0|max:5',
             'product_id' => 'required|integer|gt:0',
             'review' => 'required',
         ]);
 
-        $user = auth()->user() ?? auth('user')->user();
-
-        $product = Sell::where('product_id', $request->product_id)
-            ->where('user_id', $user->id)
-            ->where('status', 1)
-            ->first();
+        $product = Sell::where('product_id', $request->product_id)->where('user_id', auth()->user()->id)->where('status', 1)->first();
+        $user = auth()->user();
 
         if ($product == null) {
-            if ($request->is('api/*')) {
-                return $this->respondWithError('Something Went Wrong!');
-            }
             $notify[] = ['error', 'Something went wrong'];
             return back()->withNotify($notify);
         }
@@ -773,10 +728,6 @@ class UserController extends Controller
         $product->product->user->avg_rating = $avgRatingAuthor;
         $product->product->user->save();
 
-        // if ($request->is('api/*')) {
-        //     return $this->respondWithSuccess('Thanks for your review!');
-        // }
-
         $notify[] = ['success', 'Thanks for your review'];
         return back()->withNotify($notify);
     }
@@ -791,14 +742,14 @@ class UserController extends Controller
         }
 
         $file = $product->shareable_link;
-        if (!is_null($file)) {
-            session()->put('copytext', $file);
-            $notify[] = ['success', 'Shareable link of the Product is successfully Copied'];
-            return back()->withNotify($notify);
-        } else {
+            if (!is_null($file)) {
+                session()->put('copytext', $file);
+                $notify[] = ['success', 'Shareable link of the Product is successfully Copied'];
+                return back()->withNotify($notify);
+            } else {
             $notify[] = ['error', 'No shear able link is available here'];
             return back()->withNotify($notify);
-        }
+            }
     }
 
     public function download($id)
@@ -855,6 +806,7 @@ class UserController extends Controller
         $empty_message = 'No transactions.';
         $user = auth()->user() ?? auth('user')->user();
         if ($request->ajax()) {
+            
             $data = Transaction::where('user_id', $user->id)->orderBy('id', 'desc')->latest();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -881,7 +833,7 @@ class UserController extends Controller
                 ->make(true);
         }
 
-        if (($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
+        if(($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
             $partial = false;
         }
 

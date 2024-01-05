@@ -2,30 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use App\Sell;
+use App\BumpResponse;
+use App\GeneralSetting;
 use App\Level;
 use App\Order;
-use App\Deposit;
 use App\Product;
-use Carbon\Carbon;
-use App\ProductBump;
-use App\Transaction;
-use App\BumpResponse;
-use App\Subscription;
-use App\GeneralSetting;
 use App\GatewayCurrency;
-use App\WishlistProduct;
+use App\ProductBump;
+use App\Sell;
+use App\Deposit;
+use App\Subscription;
+use App\Transaction;
 use App\UserSubscription;
+use App\WishlistProduct;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Facades\Auth;
 
 class SellController extends Controller
 {
-
-    public $activeTemplate;
-
     public function __construct()
     {
         $this->activeTemplate = activeTemplate();
@@ -33,20 +33,26 @@ class SellController extends Controller
 
     public function addToCart(Request $request)
     {
-
+        // if($request->_token ){
+        //     $token = $request->_token;
+        //     dd($token);
+        //     $user = JWTAuth::toUser($token);
+        // }
+        // dd($request->all());
         $apidata = [];
         $request->validate([
             'license' => 'required|numeric|in:1,2',
             'product_id' => 'required',
         ]);
+        
         try {
             $product = Product::where('status', 1)->whereHas('user', function ($query) {
                 $query->where('status', 1);
             })->findOrFail(Crypt::decrypt($request->product_id));
 
-            if (auth()->user()) {
-
-                if ($product->user->id == auth()->user()->id) {
+            $user = auth()->user() ?? auth('user')->user();
+            if ($user) {
+                if ($product->user->id == $user->id) {
                     $apidata['status'] = "Error";
                     $apidata['data'] = " ";
                     $apidata['message'] = "It is your own product. You are not allowed to purchase this";
@@ -57,16 +63,14 @@ class SellController extends Controller
                     return back()->withNotify($notify);
                 }
             }
-
-            if (auth()->user()) {
-                $orderNumber = auth()->user()->id;
+            if ($user) {
+                $orderNumber = $user->id;
             } else {
                 if ($request->is('api/*')) {
                     if ($request->has('order_number')) {
                         $orderNumber = $request->order_number;
                     } else {
                         $orderNumber = getTrx(8);
-
                         $apidata['order_number'] = $orderNumber;
                     }
                 } else {
@@ -123,9 +127,19 @@ class SellController extends Controller
             $order->product_price = $request->license == 1 ? $product->regular_price : ($request->license == 2 ? $product->extended_price : '');
             $order->total_price = $totalPrice;
             $order->save();
+           
             if ($request->bump_fee != 0) {
-                $bumpids = is_object($request->bump) ? json_decode(json_encode($request->bump), true) : $request->bump;
-                $pages = is_object($request->pages) ? json_decode(json_encode($request->pages), true) : $request->pages;
+                if(!is_array($request->bump)){
+                 $bumpids =  json_decode($request->bump, true);
+                }else{
+                     $bumpids =  json_decode($request->bump, true);
+                }
+                if(!is_array($request->pages)){
+                    $pages = json_decode($request->pages, true);
+                }else{
+                      $pages = json_decode($request->pages, true);
+                }
+              
                 foreach ($bumpids as $key => $value) {
                     $bump = ProductBump::findorFail($key);
                     $newbump = new BumpResponse;
@@ -141,6 +155,7 @@ class SellController extends Controller
                     $newbump->save();
                 }
             }
+    
             $notify[] = ['success', 'Product added to cart successfully'];
 
             if (empty($order)) {
@@ -166,7 +181,6 @@ class SellController extends Controller
             return back()->withNotify($e->getMessage());
         }
     }
-
     public function addtowishlist($id)
     {
 
@@ -199,40 +213,48 @@ class SellController extends Controller
         $notify[] = ['success', 'Product added to wishlist successfully'];
         return back()->withNotify($notify);
     }
-
+    
+    
+    
     public function carts(Request $request, $ordernumber = null)
     {
         $page_title = 'Cart';
-        $user = auth()->user() ?? auth('user')->user();
 
-        if ($user) {
-            // Delete specific orders related to the user
+        if (auth()->user()) {
+            $user = auth()->user();
             Order::where('author_id', $user->id)->delete();
-            // Fetch orders related to the user
-            $orders = Order::with('product')->where('author_id', $user->id)->get();
+            $orders = Order::with('product', 'bumpresponses')->where('order_number', $user->id)->get();
         } else {
             if ($request->is('api/*')) {
                 if (empty($ordernumber) || is_null($ordernumber)) {
                     $apidata['status'] = "Success";
-                    $apidata['data'] = []; // Return an empty array
+                    $apidata['data'] = " ";
                     $apidata['message'] = "No Product Added";
                 } else {
+                    // $order = Order::where('order_number', $ordernumber)->get();
+                    // // $orderNumber = $user->id;
+                    // if($order->count() > 0){
+                    //     $orderNumber = $ordernumber;
+                    // }
                     $apidata['status'] = "Success";
-                    // Fetch orders based on the order number or user ID
-                    $orders = Order::with('product')->where('order_number', $ordernumber ?? $user->id)->get();
+                    $orders = Order::with('product', 'bumpresponses')->where('order_number', $ordernumber)->get()->map(function ($order) {
+                        $order->encrypted_id = Crypt::encrypt($order->id);
+                        return $order;
+                    });
+                    // $balance = auth()->user()->balance ?? 0;
+                    // $apidata['user_balance'] = getAmount($balance);
                     $apidata['data'] = $orders;
-                    $apidata['message'] = "Product Retrieved Successfully";
+                    $apidata['message'] = "Product Retrived Successfully";
                 }
                 return response()->json($apidata);
             } else {
-                // Fetch orders based on the session
-                $orders = Order::where('order_number', session()->get('order_number'))->get();
+                $orders = Order::with('product', 'bumpresponses')->where('order_number', session()->get('order_number'))->get();
             }
         }
-
         return view($this->activeTemplate . 'cart', compact('page_title', 'orders'));
     }
-
+    
+    
     public function wishlists()
     {
         $page_title = 'Wishlist';
@@ -245,18 +267,29 @@ class SellController extends Controller
         }
         return view($this->activeTemplate . 'wishlist', get_defined_vars());
     }
-
-    public function removeCart($id)
+    public function removeCart(Request $request, $id)
     {
         $order = Order::findOrFail(Crypt::decrypt($id));
+        $apidata = [];
+        if($request->is('api/*') && empty($order) ){
+            $apidata['status'] = "Error";
+            $apidata['data'] = "";
+            $apidata['message'] = "No Product Added";
+            return $apidata;
+        }
         $bump = BumpResponse::Where('order_id', $order->id);
         $order->delete();
         $bump->delete();
-
+        
+        if($request->is('api/*')){
+            $apidata['status'] = "Success";
+            $apidata['data'] = "";
+            $apidata['message'] = "Product has been remove from cart successfully";
+            return $apidata;
+        }
         $notify[] = ['success', 'Product has been remove from cart successfully'];
         return back()->withNotify($notify);
     }
-
     public function removewishlist($id)
     {
         $item = WishlistProduct::findOrFail(Crypt::decrypt($id));
@@ -265,7 +298,7 @@ class SellController extends Controller
         $notify[] = ['success', 'Product has been remove from Wishlist successfully'];
         return back()->withNotify($notify);
     }
-
+    
     public function checkoutPayment(Request $request)
     {
         if ($request->is('api/*')) {
@@ -427,7 +460,7 @@ class SellController extends Controller
 
                         DB::commit();
                         if ($request->is('api/*')) {
-                            return $this->respondWithSuccess(null, 'Your Order has been placed!');
+                            return $this->respondWithSuccess($user, 'Your Order has been placed!');
                         }
 
                         return redirect()->route('user.purchased.product');
@@ -512,7 +545,7 @@ class SellController extends Controller
             $gnl = GeneralSetting::first();
             $usersub = new UserSubscription();
             $subscription_id = $request->subscriptionid;
-            if ($request->is('api/*')) {
+            if($request->is('api/*')){
                 $subscription_id = $request->subscription_id;
             }
 
@@ -578,7 +611,7 @@ class SellController extends Controller
                 }
             }
             $subscription_id = $request->subscriptionid;
-            if ($request->is('api/*')) {
+            if($request->is('api/*')){
                 $subscription_id = $request->subscription_id;
             }
 
@@ -600,7 +633,7 @@ class SellController extends Controller
             return redirect()->route('user.subscriptionpayment', $sub->id);
         }
     }
-
+    
     public function paymentInsert($request, $subid = 0, $newchargeprice, $user)
     {
         if ($request->has('order_number')) {

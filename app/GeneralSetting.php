@@ -8,7 +8,10 @@ class GeneralSetting extends Model
 {
     protected $guarded = ['id'];
 
-    protected $casts = ['mail_config' => 'object', 'ftp' => 'object'];
+    protected $casts = [
+        'mail_config' => 'object', 
+        'ftp' => 'object'
+    ];
 
     public function scopeSitename($query, $page_title)
     {

@@ -40,6 +40,7 @@ class ResetPasswordController extends Controller
 
     public function showResetForm(Request $request, $token = null)
     {
+
         $email = session('fpass_email');
         $token = session()->has('token') ? session('token') : $token;
         if (PasswordReset::where('token', $token)->where('email', $email)->count() != 1) {

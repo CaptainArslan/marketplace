@@ -31,7 +31,7 @@ class JwtVerifyToken
         }
         
         try {
-            JWTAuth::parseToken()->authenticate();
+            $jwt = JWTAuth::parseToken()->authenticate();
         } catch (Exception $e) {
             if ($e instanceof TokenInvalidException) {
                 return response()->json([

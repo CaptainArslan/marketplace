@@ -16,8 +16,6 @@ use Yajra\DataTables\Facades\DataTables;
 class TicketController extends Controller
 {
 
-    public $activeTemplate;
-
     public function __construct()
     {
         $this->activeTemplate = activeTemplate();
@@ -81,12 +79,12 @@ class TicketController extends Controller
                     if ($request->api && $request->token) {
                         $url = route('iframe.api.ticket.show', $row->ticket . "?token=" . $request->token);
                     }
-
                     return '<a href="' . $url . '"class="icon-btn bg--primary"><i class="las la-desktop"></i></a>';
                 })
                 ->rawColumns(['action', 'subject', 'status'])
                 ->make(true);
         }
+        
         if(($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
             $partial = false;
         }
@@ -120,6 +118,7 @@ class TicketController extends Controller
         $files = $request->file('attachments');
         $allowedExts = array('jpg', 'png', 'jpeg', 'pdf', 'doc', 'docx');
 
+
         $this->validate($request, [
             'attachments' => [
                 'max:4096',
@@ -143,6 +142,7 @@ class TicketController extends Controller
             'subject' => 'required|max:100',
             'message' => 'required',
         ]);
+
 
         $ticket->user_id = Auth::id();
         $random = rand(100000, 999999);
@@ -179,17 +179,14 @@ class TicketController extends Controller
                 }
             }
         }
-
         $notify[] = ['success', 'ticket created successfully!'];
-
         if($request->is('api/*')){
             return  to_route('iframe.api.ticket', ['token' => $request->token])->withNotify($notify);
         }
-
         return redirect()->route('ticket')->withNotify($notify);
     }
 
-    public function viewTicket(Request $request, $ticket)
+    public function viewTicket($ticket)
     {
         $page_title = "Support Tickets";
         $my_ticket = SupportTicket::where('ticket', $ticket)->latest()->first();
@@ -198,15 +195,14 @@ class TicketController extends Controller
         if ($my_ticket->seller_id != 0) {
             $seller = User::where('id', $my_ticket->seller_id)->first();
         }
-
         if($request->is('api/*')){
             $partial = false;
         }
-        
         return view($this->activeTemplate . 'user.support.view', get_defined_vars());
     }
     public function backticket()
     {
+
         return $this->supportTicket();
     }
 
@@ -273,7 +269,6 @@ class TicketController extends Controller
             $ticket->save();
             $notify[] = ['success', 'Support ticket closed successfully!'];
         }
-
         return back()->withNotify($notify);
     }
     public function ticketDownload($ticket_id)

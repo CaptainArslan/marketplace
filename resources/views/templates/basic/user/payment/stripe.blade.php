@@ -15,8 +15,10 @@
                             </div>
                             <div class="card-body card-body-deposit">
 
+
                                 <div class="card-wrapper"></div>
                                 <br><br>
+
                                 <form role="form" id="payment-form" method="{{$data->method}}" action="{{$data->url}}">
                                     {{csrf_field()}}
                                     <input type="hidden" value="{{$data->track}}" name="track">

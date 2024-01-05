@@ -2,18 +2,19 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\GeneralSetting;
+use App\Http\Controllers\Controller;
+use App\Providers\RouteServiceProvider;
 use App\User;
 use App\Order;
 use App\UserLogin;
-use App\GeneralSetting;
-use App\Lib\StrongPassword;
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Auth\Events\Registered;
-use App\Providers\RouteServiceProvider;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
+use App\Lib\StrongPassword;
+use Illuminate\Support\Facades\Log;
 
 class RegisterController extends Controller
 {
@@ -37,7 +38,6 @@ class RegisterController extends Controller
      */
     protected $redirectTo = RouteServiceProvider::HOME;
 
-    public $activeTemplate = '';
     /**
      * Create a new controller instance.
      *
@@ -94,7 +94,7 @@ class RegisterController extends Controller
             'mobile' => 'required|string|max:50|unique:users',
             'password' => ['required', 'confirmed', $password_validation],
             'username' => 'required|alpha_num|unique:users|min:6',
-            'captcha' => 'sometimes|required',
+            'captcha' => 'sometimes|nullable',
             'mobile_code' => 'required|in:' . $mobileCodes,
             'country_code' => 'required|in:' . $countryCodes,
             'country' => 'nullable|in:' . $countries,
@@ -107,7 +107,7 @@ class RegisterController extends Controller
     {
         // $validator = $this->validator($request->all())->validate();
         $validator = $this->validator($request->all());
-
+        
         if ($validator->fails()) {
             $errors = $validator->errors()->all();
 
@@ -122,7 +122,7 @@ class RegisterController extends Controller
         $exist = User::where('mobile', $request->country_code . $request->mobile)->first();
 
         if ($exist) {
-            $message = 'Mobile number already exists';
+           $message = 'Mobile number already exists';
 
             if ($request->is('api/*')) {
                 return $this->respondWithError($message);
@@ -141,23 +141,25 @@ class RegisterController extends Controller
                 return back()->withNotify($notify)->withInput();
             }
         }
-
-        if (!isset($request->country)) {
+        
+        if(!isset($request->country)){
             $countryData = (array)json_decode(file_get_contents(resource_path('views/partials/country.json')));
             $country = $countryData[$request->country_code];
         }
-
+        
         if ($request->is('api/*')) {
             $request->merge([
                 'country' => $country->country,
                 'password' => base64_decode($request->password)
             ]);
         }
+        
+        // dd($request->all());
 
         event(new Registered($user = $this->create($request->all())));
 
         $this->guard()->login($user);
-
+        
         if ($request->is('api/*')) {
             if ($request->order_number) {
                 $order = Order::where('order_number', $request->order_number)->get();
@@ -165,12 +167,14 @@ class RegisterController extends Controller
                     foreach ($order as $o) {
                         $o->order_number = $user->id;
                         $o->save();
+                        Log::info('Order id -> ' . $request->order_number. ' has been updated to -> '. $user->id);
                     }
                 } else {
-                    return $this->respondWithError('Invalid Order Number!');
+                    Log::error('Inavlid Order number');
+                    // return $this->respondWithError('Invalid Order Number!');
                 }
             }
-            return $this->respondWithSuccess(null, 'User signed up successfully!');
+            return $this->respondWithSuccess($user, 'User signed up successfully!');
         }
 
         return $this->registered($request, $user)

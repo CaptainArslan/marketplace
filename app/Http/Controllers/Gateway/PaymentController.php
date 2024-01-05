@@ -17,15 +17,13 @@ use App\GatewayCurrency;
 use App\UserSubscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
 {
-    public $activeTemplate;
     public function __construct()
     {
         return $this->activeTemplate = activeTemplate();
@@ -102,6 +100,7 @@ class PaymentController extends Controller
         $page_title = 'Deposit Preview';
         return view($this->activeTemplate . 'user.payment.preview', compact('data', 'page_title'));
     }
+
     public function subscriptionpayment($sub_id)
     {
         if (is_numeric($sub_id)) {
@@ -115,7 +114,7 @@ class PaymentController extends Controller
             dd("Sajjad");
         }
     }
-
+    
     public function payment()
     {
         $orders = Order::where('order_number', auth()->user()->id)->get();
@@ -132,10 +131,154 @@ class PaymentController extends Controller
         $gatewayCurrency = GatewayCurrency::where('min_amount', '<', $totalPrice)->where('max_amount', '>', $totalPrice)->whereHas('method', function ($gate) {
             $gate->where('status', 1);
         })->with('method')->orderby('method_code')->get();
-        
+
         return view($this->activeTemplate . 'user.payment.payment', compact('gatewayCurrency', 'page_title', 'totalPrice'));
     }
 
+
+    // public function paymentInsert(Request $request)
+    // {
+    //     if ($request->is('api/*')) {
+    //         $validator = Validator::make($request->all(), [
+    //             'amount' => 'required|numeric|gt:0',
+    //             'method_code' => 'required|in:101,103',
+    //             'currency' => 'required',
+    //             'order_number' => 'required'
+    //         ]);
+    //         if ($validator->fails()) {
+    //             return $this->respondWithError($validator->errors()->first());
+    //         }
+    //     } else {
+    //         $request->validate([
+    //             'amount' => 'required|numeric|gt:0',
+    //             'method_code' => 'required|in:101,103',
+    //             'currency' => 'required',
+    //         ]);
+    //     }
+        
+    //     $user = auth()->user() ?? auth('user')->user();
+    //     $newchargeprice = $request->amount;
+
+    //     $subid = $request->subid ?? 0;
+    //     if ($subid == 0) {
+    //         if ($request->has('order_number')) {
+    //             $orderNumber = $request->order_number;
+    //         } else {
+    //             $orderNumber = $user->id;
+    //         }
+
+    //         $orders = Order::where('order_number', $orderNumber)->get();
+    //         $totalPrice = $orders->sum('total_price');
+
+    //         if ($totalPrice != (float) $newchargeprice) {
+    //             if ($request->is('api/*')) {
+    //                 return $this->respondWithError('Something goes wrong!');
+    //             }
+    //             $notify[] = ['error', 'Something goes wrong.'];
+    //             return redirect()->route('home')->withNotify($notify);
+    //         }
+    //     }
+
+    //     $gate = GatewayCurrency::where('method_code', $request->method_code ?? 103)->where('currency', $request->currency ?? 'USD')->first();
+
+    //     if (!$gate) {
+    //         if ($request->is('api/*')) {
+    //             return $this->respondWithError('Invalid Gateway');
+    //         }
+    //         $notify[] = ['error', 'Invalid Gateway'];
+    //         return back()->withNotify($notify);
+    //     }
+        
+    //     $data = new Deposit();
+    //     if ($subid == 0) {
+    //         $data->order_number = $orders[0]->order_number;
+    //         $data->sub_id = null; //means this deposit is for the product order
+    //     } else {
+    //         $data->order_number = null;
+    //         $data->sub_id = $subid; // means this deposit is for Subscription buy
+    //         $sub = Subscription::where('id', $subid)->first();
+    //         $subuser = UserSubscription::where('user_id', auth()->user()->id)->with('subscriptions')->first();
+
+    //         if (!is_null($subuser)) {
+    //             if ($subuser->subscriptions->plan_type == 1) {
+    //                 $totaldays = Carbon::parse($subuser->expire_on)->diffInDays(Carbon::parse($subuser->start_on));
+    //                 $remaindays = Carbon::parse($subuser->expire_on)->diffInDays(Carbon::now());
+    //                 $perday = $subuser->subscriptions->price / $totaldays;
+    //                 $currentprice = $remaindays * $perday;
+    //                 $newchargeprice = $sub->price - $currentprice;
+    //                 // dd($subuser->subscriptions->price, $totaldays, $remaindays, $perday, $currentprice, $newcharge);
+    //             }
+    //         }
+    //     }
+
+    //     $charge = getAmount($gate->fixed_charge + ($newchargeprice * $gate->percent_charge / 100));
+    //     $payable = getAmount($newchargeprice + $charge);
+    //     $final_amo = getAmount($payable * $gate->rate);
+    //     $data->user_id = $user->id;
+    //     $data->method_code = $gate->method_code;
+    //     $data->method_currency = strtoupper($gate->currency);
+    //     $data->amount = $newchargeprice;
+    //     $data->charge = $charge;
+    //     $data->rate = $gate->rate;
+    //     $data->final_amo = getAmount($final_amo);
+    //     $data->btc_amo = 0;
+    //     $data->btc_wallet = "";
+    //     $data->trx = getTrx();
+    //     $data->try = 0;
+    //     $data->status = 0;
+    //     $data->save();
+        
+    //     if ($request->is('api/*')) {
+    //         $deposit = Deposit::where('trx', $data->trx)->orderBy('id', 'DESC')->with('gateway')->first();
+    //         if (is_null($deposit)) {
+    //             if ($request->is('api/*')) {
+    //                 return $this->respondWithError('Invalid Deposit Request');
+    //             }
+    //             $notify[] = ['error', 'Invalid Deposit Request'];
+    //             return redirect()->route(gatewayRedirectUrl())->withNotify($notify);
+    //         }
+    //         if ($deposit->status != 0) {
+    //             if ($request->is('api/*')) {
+    //                 return $this->respondWithError('Invalid Deposit Request');
+    //             }
+    //             $notify[] = ['error', 'Invalid Deposit Request'];
+    //             return redirect()->route(gatewayRedirectUrl())->withNotify($notify);
+    //         }
+
+    //         if ($deposit->method_code >= 1000) {
+    //             $this->userDataUpdate($deposit);
+    //             if ($request->is('api/*')) {
+    //                 return $this->respondWithError('Your deposit request is queued for approval.');
+    //             }
+    //             $notify[] = ['success', 'Your deposit request is queued for approval.'];
+    //             return back()->withNotify($notify);
+    //         }
+
+    //         $dirName = $deposit->gateway->alias;
+    //         $new = __NAMESPACE__ . '\\' . $dirName . '\\ProcessController';
+
+    //         $response = $new::process($deposit);
+    //         $response = json_decode($response);
+
+    //         if (isset($response->error)) {
+    //             if ($request->is('api/*')) {
+    //                 return $this->respondWithError($response->message);
+    //             }
+    //             $notify[] = ['error', $data->message];
+    //             return redirect()->route(gatewayRedirectUrl())->withNotify($notify);
+    //         }
+    //     }
+
+    //     if($request->is('api/*')){            
+    //         return $this->respondWithSuccess($data, 'Successfull');
+    //     }
+
+    //     session()->put('Track', $data->trx);
+    //     session()->put('sub_id', $data->sub_id);
+
+    //     return redirect()->route('user.payment.preview');
+    // }
+    
     public function paymentInsert(Request $request)
     {
         if ($request->is('api/*')) {
@@ -171,6 +314,7 @@ class PaymentController extends Controller
 
             if ($totalPrice != (float) $newchargeprice) {
                 if ($request->is('api/*')) {
+                    Log::error('total pice or new price does not matched or order number is wrong');
                     return $this->respondWithError('Something went wrong!');
                 }
                 $notify[] = ['error', 'Something went wrong.'];
@@ -179,7 +323,7 @@ class PaymentController extends Controller
         }
 
         $gate = GatewayCurrency::where('method_code', $request->method_code ?? 103)->where('currency', $request->currency ?? 'USD')->first();
-        $gateway = json_decode($gate->gateway_parameter, true);
+        $gateway =json_decode($gate->gateway_parameter, true);
 
         if (!$gate) {
             if ($request->is('api/*')) {
@@ -212,6 +356,7 @@ class PaymentController extends Controller
             }
         }
 
+
         $charge = getAmount($gate->fixed_charge + ($newchargeprice * $gate->percent_charge / 100));
         $payable = getAmount($newchargeprice + $charge);
         $final_amo = getAmount($payable * $gate->rate);
@@ -228,8 +373,8 @@ class PaymentController extends Controller
         $data->try = 0;
         $data->status = 0;
         $data->save();
-
-        if ($request->is('api/*')) {
+        
+        if ($request->is('api/*')) { 
             $deposit = Deposit::where('trx', $data->trx)->orderBy('id', 'DESC')->with('gateway')->first();
             if (is_null($deposit) || $deposit->status != 0) {
                 if ($request->is('api/*')) {
@@ -238,6 +383,7 @@ class PaymentController extends Controller
                 $notify[] = ['error', 'Invalid Deposit Request'];
                 return redirect()->route(gatewayRedirectUrl())->withNotify($notify);
             }
+
             if ($deposit->method_code >= 1000) {
                 $this->userDataUpdate($deposit);
                 if ($request->is('api/*')) {
@@ -260,7 +406,9 @@ class PaymentController extends Controller
                 $notify[] = ['error', $data->message];
                 return redirect()->route(gatewayRedirectUrl())->withNotify($notify);
             }
+        }
 
+        if($request->is('api/*')){
             $res = [
                 'order' => $data,
                 'publishable_key' => $gateway['publishable_key'] ?? null,
@@ -273,6 +421,8 @@ class PaymentController extends Controller
 
         return redirect()->route('user.payment.preview');
     }
+
+
 
     public function paymentPreview()
     {
@@ -328,6 +478,7 @@ class PaymentController extends Controller
         }
 
         if (isset($data->redirect)) {
+
             return redirect($data->redirect_url);
         }
 

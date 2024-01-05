@@ -83,41 +83,40 @@
                     },
                 ], // <-- Missing comma was added here
                 "createdRow": function(row, data, dataIndex) {
-                    console.log(  data.id);
-                    let c = `{{ route('user.product.delete',`+ data.id + `) }}`;
-                    var modalHtml = `
-        <div id="deleteModal${dataIndex}" class="modal fade" data-bs-backdrop="static"
-            data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel"
-            aria-hidden="true" d-none>
-            <div class="modal-dialog">
-                <form  action="{{ route('user.product.delete') }}" method="POST">
-                    @csrf
-                    <input type="hidden" name="product_id" value="{{ Crypt::encrypt(`+data.id+`) }}" required>
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">@lang('Delete Product')</h5>
-                            <button type="button" class="close" data-bs-dismiss="modal">&times;</button>
+                // console.log(data.id + " " + dataIndex);
+                var modalHtml = `
+                        <div id="deleteModal${dataIndex}" class="modal fade" data-bs-backdrop="static"
+                            data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel"
+                            aria-hidden="true" d-none>
+                            <div class="modal-dialog">
+                                <form  action="{{ route('user.product.delete') }}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="product_id" value="${data.id}" required>
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">@lang('Delete Product')</h5>
+                                            <button type="button" class="close" data-bs-dismiss="modal">&times;</button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>@lang('Are you sure you want to delete this product?')</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn--primary btn-sm" data-bs-dismiss="modal">@lang('Close')</button>
+                                            <button type="submit" class="btn btn--danger btn-sm">@lang('Delete')</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
-                        <div class="modal-body">
-                            <p>@lang('Are you sure you want to delete this product?')</p>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn--primary btn-sm" data-bs-dismiss="modal">@lang('Close')</button>
-                            <button type="submit" class="btn btn--danger btn-sm">@lang('Delete')</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    `;
-                    $('body').append(modalHtml);
-                    // Add a data attribute to the row with the ID of the associated data
-                    $(row).attr('data-id', data.id);
+                    `;
+                $('body').append(modalHtml);
+                // Add a data attribute to the row with the ID of the associated data
+                $(row).attr('data-id', data.id);
 
-                    // Add a click event listener to the row that displays an alert with the associated data
-                    let x = row.querySelector('[data-bs-target="#deleteModal"]');
-                    x?.setAttribute('data-bs-target','#deleteModal'+ dataIndex);
-                }
+                // Add a click event listener to the row that displays an alert with the associated data
+                let x = row.querySelector('[data-bs-target="#deleteModal"]');
+                x?.setAttribute('data-bs-target', '#deleteModal' + dataIndex);
+            }
             });
         });
         $('body').on('click', '.addnewBtn', function(e) {

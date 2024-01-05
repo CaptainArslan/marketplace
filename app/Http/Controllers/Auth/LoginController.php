@@ -70,7 +70,7 @@ class LoginController extends Controller
         }
 
         if (isset($request->captcha) && !captchaVerify($request->captcha, $request->captcha_secret)) {
-            return $request->is('api/*')
+             return $request->is('api/*')
                 ? $this->respondWithError("Invalid Captcha")
                 : back()->withNotify(['error', "Invalid Captcha"])->withInput();
         }
@@ -89,24 +89,25 @@ class LoginController extends Controller
             }
             
             if (!$token = auth('user')->attempt($request->only('email', 'password'))) {
-                return $this->respondWithError('Invalid credentials!');
+                return $this->respondWithError('Invalid Credentials');
             }
             
             $user = auth('user')->user();
-            // Auth::loginUsingId($user->id);
-
-            if($request->order_number){
+            Auth::loginUsingId($user->id);
+            if($request->has('order_number')){
+                Log::info('Order id -> ' . $request->order_number. ' has been updated to -> '. $user->id);
                 $order = Order::where('order_number', $request->order_number)->get();
-                if ($order->count() > 0) {
+                if($order->count() > 0){
                     foreach($order as $o){
                         $o->order_number = $user->id;
                         $o->save();
                     }
-                } else {
-                    return $this->respondWithError('Invalid Order Number!');
+                }else{
+                    Log::info('Invalid Order Number!');
+                    // return $this->respondWithError('Invalid Order Number!');
                 }
             }
-
+            
             return response()->json([
                 'success' => true,
                 'access_token' => $token,

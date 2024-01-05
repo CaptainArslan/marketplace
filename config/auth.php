@@ -53,6 +53,7 @@ return [
             'driver' => 'session',
             'provider' => 'admins',
         ],
+
         'reviewer' => [
             'driver' => 'session',
             'provider' => 'reviewers',
