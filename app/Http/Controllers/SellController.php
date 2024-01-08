@@ -71,29 +71,19 @@ class SellController extends Controller
             // for to create order number
             if ($user) {
                 $orderNumber = $user->id;
-<<<<<<< HEAD
                 Log::info('user loggend in and the order number is = '. $orderNumber);
-=======
-                Log::info('user loggend in and the order number is = ' . $orderNumber);
->>>>>>> origin/staging
+
             } else {
                 if ($request->is('api/*')) {
                     Log::info('add to cart api');
                     if ($request->has('order_number') && !empty($request->order_number)) {
                         $orderNumber = $request->order_number;
-<<<<<<< HEAD
                         Log::info('if request has order number = ' . $orderNumber);
                     } else {
                         $orderNumber = getTrx(8);
                         $apidata['order_number'] = $orderNumber;
                         Log::info('if request does not have order number = ' . $orderNumber);
-=======
-                        Log::info('if request has order number' . $orderNumber);
-                    } else {
-                        $orderNumber = getTrx(8);
-                        $apidata['order_number'] = $orderNumber;
-                        Log::info('if request does not have order number' . $orderNumber);
->>>>>>> origin/staging
+
                     }
                 } else {
                     if (session()->has('order_number')) {
@@ -237,11 +227,7 @@ class SellController extends Controller
         $notify[] = ['success', 'Product added to wishlist successfully'];
         return back()->withNotify($notify);
     }
-<<<<<<< HEAD
-    
-=======
 
->>>>>>> origin/staging
     public function carts(Request $request, $ordernumber = null)
     {
         $page_title = 'Cart';
@@ -280,11 +266,7 @@ class SellController extends Controller
         }
         return view($this->activeTemplate . 'cart', compact('page_title', 'orders'));
     }
-<<<<<<< HEAD
-    
-=======
 
->>>>>>> origin/staging
     public function wishlists()
     {
         $page_title = 'Wishlist';
@@ -297,11 +279,7 @@ class SellController extends Controller
         }
         return view($this->activeTemplate . 'wishlist', get_defined_vars());
     }
-<<<<<<< HEAD
-    
-=======
 
->>>>>>> origin/staging
     public function removeCart(Request $request, $id)
     {
         $order = Order::findOrFail(Crypt::decrypt($id));
