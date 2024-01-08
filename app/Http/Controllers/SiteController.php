@@ -2,23 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Page;
+use App\Sell;
+use App\User;
+use App\Level;
+use App\Order;
+use App\Product;
 use App\Category;
 use App\Frontend;
 use App\Language;
-use App\Level;
-use App\Page;
-use App\Product;
-use App\Sell;
-use App\SubCategory;
-use App\Subscriber;
-use App\SupportAttachment;
-use App\SupportMessage;
-use App\SupportTicket;
-use App\User;
-use App\WishlistProduct;
-use Illuminate\Support\Facades\Crypt;
 use Carbon\Carbon;
+use App\Subscriber;
+use App\SubCategory;
+use App\SupportTicket;
+use App\SupportMessage;
+use App\WishlistProduct;
+use App\SupportAttachment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Validator;
 
 class SiteController extends Controller
@@ -548,24 +549,44 @@ class SiteController extends Controller
         return $tags;
     }
 
-    public function productDetails($slug, $id, $fetch = null)
+    public function productDetails($slug, $id, $fetch = null, $ordernumber = null)
     {
         $page_title = 'Product Details';
         $product = Product::where('status', 1)->with(['category', 'user', 'ratings', 'bumps', 'productcustomfields'])->findOrFail($id);
+
+        // dd($product);
         $encryptedProductId = Crypt::encrypt($product->id);
+
 
         if (auth()->user()) {
             $wishlist = WishlistProduct::where('user_id', auth()->user()->id)->first();
         }
-        $moreProducts = Product::where('user_id', $product->user_id)->where('status', 1)->with(['subcategory', 'user', 'ratings'])->limit(6)->inRandomOrder()->get();
+        $moreProducts = Product::where('user_id', $product->user_id)
+            ->where('status', 1)->with(['subcategory', 'user', 'ratings'])
+            ->limit(6)
+            ->inRandomOrder()
+            ->get();
         $levels = Level::get();
-        $ratings = $product->ratings()->with('user')->paginate(getPaginate());
+        $ratings = $product
+            ->ratings()
+            ->with('user')
+            ->paginate(getPaginate());
         $apidata = [];
         $apidata['product'] = $product;
         $apidata['moreProducts'] = $moreProducts;
         $apidata['levels'] = $levels;
         $apidata['ratings'] = $ratings;
         $apidata['encrypted_id'] = $encryptedProductId;
+        $apidata['in_cart'] = false;
+
+        if ($ordernumber != null) {
+            $order = Order::where('order_number', $ordernumber)->where('product_id', $id)->with('bumpresponses')->first();
+            $apidata['oldOrder'] = $order;
+            if(!empty($order)){
+                $apidata['in_cart'] = true;
+            }
+        }
+
         if (!is_null($fetch) && $fetch == 'fetch') {
             return response()->json($apidata);
         }
@@ -622,17 +643,17 @@ class SiteController extends Controller
         $products = Product::where('status', 1)->whereHas('user', function ($query) {
             $query->where('status', 1);
         })
-        ->whereHas('category', function ($query) {
-            $query->where('status', 1);
-        })
-        ->whereHas('subcategory', function ($query) {
-            $query->where('status', 1);
-        })
-        ->with(['subcategory', 'user'])
-        ->with('user')
-        // ->with('sells')
-        ->latest()
-        ->paginate(getPaginate());
+            ->whereHas('category', function ($query) {
+                $query->where('status', 1);
+            })
+            ->whereHas('subcategory', function ($query) {
+                $query->where('status', 1);
+            })
+            ->with(['subcategory', 'user'])
+            ->with('user')
+            // ->with('sells')
+            ->latest()
+            ->paginate(getPaginate());
 
         $tags = $this->getTags($products->pluck('tag'));
         $categoryForSearchPage = Category::where('status', 1)->latest()->get();

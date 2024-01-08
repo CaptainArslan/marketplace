@@ -34,19 +34,23 @@ class SellController extends Controller
 
     public function addToCart(Request $request)
     {
-        // if($request->_token ){
-        //     $token = $request->_token;
-        //     dd($token);
-        //     $user = JWTAuth::toUser($token);
-        // }
-        // dd($request->all());
         $apidata = [];
         $request->validate([
             'license' => 'required|numeric|in:1,2',
             'product_id' => 'required',
+            'order_number' => 'nullable',
         ]);
-        
+
         try {
+            if ($request->has('order_number')) {
+                $order = Order::where('order_number', $request->order_number)->where('product_id', $request->product_id)->first();
+                if ($order) {
+                    Log::info('Order Number: ' . $request->order_number . ' Product ID: ' . $request->product_id . ' Already Exists in Cart and deleted');
+                    $order->bumpresponses()->delete();
+                    $order->delete();
+                }
+            }
+
             $product = Product::where('status', 1)->whereHas('user', function ($query) {
                 $query->where('status', 1);
             })->findOrFail(Crypt::decrypt($request->product_id));
@@ -128,19 +132,19 @@ class SellController extends Controller
             $order->product_price = $request->license == 1 ? $product->regular_price : ($request->license == 2 ? $product->extended_price : '');
             $order->total_price = $totalPrice;
             $order->save();
-           
+
             if ($request->bump_fee != 0) {
                 if(!is_array($request->bump)){
-                 $bumpids =  json_decode($request->bump, true);
-                }else{
-                     $bumpids =  json_decode($request->bump, true);
+                    $bumpids =  json_decode($request->bump, true);
+                } else {
+                    $bumpids =  json_decode($request->bump, true);
                 }
-                if(!is_array($request->pages)){
+                if (!is_array($request->pages)) {
                     $pages = json_decode($request->pages, true);
-                }else{
-                      $pages = json_decode($request->pages, true);
+                } else {
+                    $pages = json_decode($request->pages, true);
                 }
-              
+
                 foreach ($bumpids as $key => $value) {
                     $bump = ProductBump::findorFail($key);
                     $newbump = new BumpResponse;

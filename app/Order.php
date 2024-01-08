@@ -21,9 +21,9 @@ class Order extends Model
 
     public function author()
     {
-        return $this->belongsTo(User::class,'author_id');
+        return $this->belongsTo(User::class, 'author_id');
     }
-         public function bumpresponses()
+    public function bumpresponses()
     {
         return $this->hasMany(BumpResponse::class);
     }

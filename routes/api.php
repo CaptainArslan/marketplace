@@ -2,7 +2,6 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Auth\ForgotPasswordController;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,7 +36,7 @@ Route::get('/{home?}', 'SiteController@index')->name('homepage');
 Route::get('all-products/{fetch?}', 'SiteController@allProducts')->name('fetch.products');
 Route::get('product/search/{query?}', 'SiteController@productSearch')->name('search.product');
 Route::get('product/filtered/{query?}', 'SiteController@productFilter')->name('product.filtered');
-Route::get('product-details/{slug}/{id}/{fetch}', 'SiteController@productDetails')->name('product.details');
+Route::get('product-details/{slug}/{id}/{fetch}/{ordernumber?}', 'SiteController@productDetails')->name('product.details');
 Route::post('product/add-to-cart', 'SellController@addToCart')->name('addtocart');
 Route::get('product/cart/{ordernumber?}', 'SellController@carts')->name('carts');
 Route::get('product/remove-cart/{id}', 'SellController@removeCart')->name('remove.cart');
