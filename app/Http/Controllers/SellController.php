@@ -2,27 +2,26 @@
 
 namespace App\Http\Controllers;
 
-use App\BumpResponse;
-use App\GeneralSetting;
+use App\Sell;
 use App\Level;
 use App\Order;
-use App\Product;
-use App\GatewayCurrency;
-use App\ProductBump;
-use App\Sell;
 use App\Deposit;
-use App\Subscription;
-use App\Transaction;
-use App\UserSubscription;
-use App\WishlistProduct;
+use App\Product;
 use Carbon\Carbon;
+use App\ProductBump;
+use App\Transaction;
+use App\BumpResponse;
+use App\Subscription;
+use App\GeneralSetting;
+use App\GatewayCurrency;
+use App\WishlistProduct;
+use App\UserSubscription;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
-use Tymon\JWTAuth\Facades\JWTAuth;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Contracts\Encryption\DecryptException;
 
 class SellController extends Controller
 {
@@ -68,15 +67,20 @@ class SellController extends Controller
                     return back()->withNotify($notify);
                 }
             }
+            // for to create order number
             if ($user) {
                 $orderNumber = $user->id;
+                Log::info('user loggend in and the order number is = ' . $orderNumber);
             } else {
                 if ($request->is('api/*')) {
-                    if ($request->has('order_number')) {
+                    Log::info('add to cart api');
+                    if ($request->has('order_number') && !empty($request->order_number)) {
                         $orderNumber = $request->order_number;
+                        Log::info('if request has order number' . $orderNumber);
                     } else {
                         $orderNumber = getTrx(8);
                         $apidata['order_number'] = $orderNumber;
+                        Log::info('if request does not have order number' . $orderNumber);
                     }
                 } else {
                     if (session()->has('order_number')) {
@@ -118,6 +122,7 @@ class SellController extends Controller
             if ($product->support == 0) {
                 $support_time = null;
             }
+
             $totalPrice = $totalPrice + $request->bump_fee;
             $order = new Order();
             $order->order_number = $orderNumber;
@@ -134,7 +139,7 @@ class SellController extends Controller
             $order->save();
 
             if ($request->bump_fee != 0) {
-                if(!is_array($request->bump)){
+                if (!is_array($request->bump)) {
                     $bumpids =  json_decode($request->bump, true);
                 } else {
                     $bumpids =  json_decode($request->bump, true);
@@ -160,7 +165,7 @@ class SellController extends Controller
                     $newbump->save();
                 }
             }
-    
+
             $notify[] = ['success', 'Product added to cart successfully'];
 
             if (empty($order)) {
@@ -186,6 +191,7 @@ class SellController extends Controller
             return back()->withNotify($e->getMessage());
         }
     }
+    
     public function addtowishlist($id)
     {
 
@@ -218,9 +224,9 @@ class SellController extends Controller
         $notify[] = ['success', 'Product added to wishlist successfully'];
         return back()->withNotify($notify);
     }
-    
-    
-    
+
+
+
     public function carts(Request $request, $ordernumber = null)
     {
         $page_title = 'Cart';
@@ -259,8 +265,8 @@ class SellController extends Controller
         }
         return view($this->activeTemplate . 'cart', compact('page_title', 'orders'));
     }
-    
-    
+
+
     public function wishlists()
     {
         $page_title = 'Wishlist';
@@ -277,7 +283,7 @@ class SellController extends Controller
     {
         $order = Order::findOrFail(Crypt::decrypt($id));
         $apidata = [];
-        if($request->is('api/*') && empty($order) ){
+        if ($request->is('api/*') && empty($order)) {
             $apidata['status'] = "Error";
             $apidata['data'] = "";
             $apidata['message'] = "No Product Added";
@@ -286,8 +292,8 @@ class SellController extends Controller
         $bump = BumpResponse::Where('order_id', $order->id);
         $order->delete();
         $bump->delete();
-        
-        if($request->is('api/*')){
+
+        if ($request->is('api/*')) {
             $apidata['status'] = "Success";
             $apidata['data'] = "";
             $apidata['message'] = "Product has been remove from cart successfully";
@@ -301,7 +307,7 @@ class SellController extends Controller
     {
         $order = Order::where('order_number', Crypt::decrypt($order_number))->get();
 
-        if($request->is('api/*') && $order->count() == 0 ){
+        if ($request->is('api/*') && $order->count() == 0) {
             $apidata['status'] = "Error";
             $apidata['data'] = "";
             $apidata['message'] = "No Product Added";
@@ -315,8 +321,8 @@ class SellController extends Controller
             }
             $item->delete();
         }
-        
-        if($request->is('api/*')){
+
+        if ($request->is('api/*')) {
             $apidata['status'] = "Success";
             $apidata['data'] = "";
             $apidata['message'] = "Product has been remove from your cart successfully";
@@ -325,7 +331,7 @@ class SellController extends Controller
         $notify[] = ['success', 'Product has been remove from your cart successfully'];
         return back()->withNotify($notify);
     }
-    
+
     public function removewishlist($id)
     {
         $item = WishlistProduct::findOrFail(Crypt::decrypt($id));
@@ -334,7 +340,7 @@ class SellController extends Controller
         $notify[] = ['success', 'Product has been remove from Wishlist successfully'];
         return back()->withNotify($notify);
     }
-    
+
     public function checkoutPayment(Request $request)
     {
         if ($request->is('api/*')) {
@@ -581,7 +587,7 @@ class SellController extends Controller
             $gnl = GeneralSetting::first();
             $usersub = new UserSubscription();
             $subscription_id = $request->subscriptionid;
-            if($request->is('api/*')){
+            if ($request->is('api/*')) {
                 $subscription_id = $request->subscription_id;
             }
 
@@ -647,7 +653,7 @@ class SellController extends Controller
                 }
             }
             $subscription_id = $request->subscriptionid;
-            if($request->is('api/*')){
+            if ($request->is('api/*')) {
                 $subscription_id = $request->subscription_id;
             }
 
@@ -669,7 +675,7 @@ class SellController extends Controller
             return redirect()->route('user.subscriptionpayment', $sub->id);
         }
     }
-    
+
     public function paymentInsert($request, $subid = 0, $newchargeprice, $user)
     {
         if ($request->has('order_number')) {

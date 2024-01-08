@@ -42,6 +42,7 @@ class ZipController extends Controller
         $storagePath = 'uploads/' . $rand;
         $uploadedFilePath = $uploadedFile->storeAs($storagePath, $uploadedFile->getClientOriginalName(), 'public');
         Log::info($uploadedFilePath);
+        dd($uploadedFilePath);
 
         // Check if the file has been saved successfully
         if (!$uploadedFilePath) {

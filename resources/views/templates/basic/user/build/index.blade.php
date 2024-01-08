@@ -19,8 +19,8 @@
                                             <label>@lang('Please select app')</label>
                                             <select name="app_type" id="" class="form--control w-100" required>
                                                 <option value="">Please Select</option>
-                                                <option value="live">Production</option>
                                                 <option value="beta">Beta</option>
+                                                <option value="live">Production</option>
                                             </select>
                                             <!-- <input type="text" name="firstname" value="" class="form--control"> -->
                                         </div>
