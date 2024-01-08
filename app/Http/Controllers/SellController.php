@@ -26,6 +26,7 @@ use Illuminate\Contracts\Encryption\DecryptException;
 class SellController extends Controller
 {
     public $activeTemplate;
+
     public function __construct()
     {
         $this->activeTemplate = activeTemplate();
@@ -191,7 +192,7 @@ class SellController extends Controller
             return back()->withNotify($e->getMessage());
         }
     }
-    
+
     public function addtowishlist($id)
     {
 
@@ -224,8 +225,6 @@ class SellController extends Controller
         $notify[] = ['success', 'Product added to wishlist successfully'];
         return back()->withNotify($notify);
     }
-
-
 
     public function carts(Request $request, $ordernumber = null)
     {
@@ -266,7 +265,6 @@ class SellController extends Controller
         return view($this->activeTemplate . 'cart', compact('page_title', 'orders'));
     }
 
-
     public function wishlists()
     {
         $page_title = 'Wishlist';
@@ -279,6 +277,7 @@ class SellController extends Controller
         }
         return view($this->activeTemplate . 'wishlist', get_defined_vars());
     }
+
     public function removeCart(Request $request, $id)
     {
         $order = Order::findOrFail(Crypt::decrypt($id));

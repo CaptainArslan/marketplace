@@ -32,17 +32,14 @@ class ZipController extends Controller
             'file' => 'required|mimes:zip|max:10240', // Adjust max file size as needed
         ]);
 
-        $destinationFolder = $request->app_type;
-
         // Upload the file
         $uploadedFile = $request->file('file');
-        $rand = Str::random(6);
 
         // Save the uploaded file
-        $storagePath = 'uploads/' . $rand;
+        $storagePath = 'uploads/';
         $uploadedFilePath = $uploadedFile->storeAs($storagePath, $uploadedFile->getClientOriginalName(), 'public');
-        Log::info($uploadedFilePath);
-        dd($uploadedFilePath);
+        // Log::info($uploadedFilePath);
+        Log::info(storage_path("app/public/{$uploadedFilePath}"));
 
         // Check if the file has been saved successfully
         if (!$uploadedFilePath) {
@@ -52,21 +49,16 @@ class ZipController extends Controller
         // Now, read the file and extract it
         $zip = new ZipArchive;
         if ($zip->open(storage_path("app/public/{$uploadedFilePath}")) === true) {
-            $extractPath = public_path("uploads/{$destinationFolder}");
-            $extractPath = dirname(dirname(dirname($extractPath)));
-            Log::info($extractPath);
-            if (!file_exists($extractPath)) {
-                mkdir($extractPath, 0777, true);
+            if (env('APP_ENV') == 'production') {
+                $extractPath = ($request->app_type == 'live') ? '/home/marketplacejdfun/public_html' : '/home/marketplacejdfun/staging_app';
+            } else {
+                $extractPath = ($request->app_type == 'live') ? 'C:\xampp\htdocs\paths\live' : 'C:\xampp\htdocs\paths\beta';
             }
+
+            Log::info($extractPath);
             // Extract to the specified directory
             $zip->extractTo($extractPath);
             $zip->close();
-
-            // Move all files from the extracted folder to the outer folder
-            $extractedFiles = File::allFiles($extractPath);
-            foreach ($extractedFiles as $file) {
-                File::move($file->getPathname(), $extractPath . '/' . $file->getFilename());
-            }
 
             // Delete the temporary uploaded zip file
             Storage::disk('public')->delete($uploadedFilePath);
@@ -75,7 +67,7 @@ class ZipController extends Controller
         }
 
         // Delete the temporary uploaded zip file in case of extraction failure
-        // Storage::disk('public')->delete($uploadedFilePath);
+        Storage::disk('public')->delete($uploadedFilePath);
 
         return back()->withNotify(['error', 'Failed to extract the zip file.']);
     }
