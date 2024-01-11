@@ -2,7 +2,9 @@
 
 @section('content')
 
-    @include($activeTemplate . 'partials.dashboardHeader')
+    @if ($partial)
+        @include($activeTemplate . 'partials.dashboardHeader')
+    @endif
 
     <div class="pb-100">
         <div class="dashboard-area pt-50">

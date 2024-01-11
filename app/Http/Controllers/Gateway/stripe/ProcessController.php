@@ -3,16 +3,15 @@
 namespace App\Http\Controllers\Gateway\stripe;
 
 use App\Deposit;
-use App\GeneralSetting;
-use App\Http\Controllers\Gateway\PaymentController;
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
+use Stripe\Token;
 use Stripe\Charge;
 use Stripe\Stripe;
-use Stripe\Token;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
-use Log;
+use App\Http\Controllers\Gateway\PaymentController;
 
 
 class ProcessController extends Controller
@@ -27,9 +26,9 @@ class ProcessController extends Controller
         $alias = $deposit->gateway->alias;
 
         $send['track'] = $deposit->trx;
-        $send['view'] = 'user.payment.'.$alias;
+        $send['view'] = 'user.payment.' . $alias;
         $send['method'] = 'post';
-        $send['url'] = route('ipn.'.$alias);
+        $send['url'] = route('ipn.' . $alias);
 
         return json_encode($send);
     }
@@ -38,7 +37,7 @@ class ProcessController extends Controller
     {
         $track = Session::get('Track');
         $data = Deposit::where('trx', $track)->orderBy('id', 'DESC')->first();
-        
+
         if ($data->status == 1) {
             $notify[] = ['error', 'Invalid Request.'];
             return redirect()->route(gatewayRedirectUrl())->withNotify($notify);
@@ -53,7 +52,7 @@ class ProcessController extends Controller
         $exp = $request->cardExpiry;
         $cvc = $request->cardCVC;
 
-        $exp = $pieces = explode("/", $_POST['cardExpiry']);
+        $exp = explode("/", $_POST['cardExpiry']);
         $emo = trim($exp[0]);
         $eyr = trim($exp[1]);
         $cnts = round($data->final_amo, 2) * 100;
@@ -66,7 +65,7 @@ class ProcessController extends Controller
         Stripe::setApiVersion("2020-03-02");
 
         try {
-            $token = \Stripe\Token::create(array(
+            $token = Token::create(array(
                 "card" => array(
                     "number" => "$cc",
                     "exp_month" => $emo,
@@ -89,18 +88,17 @@ class ProcessController extends Controller
                     $notify[] = ['success', 'Payment Success.'];
                 }
             } catch (\Exception $e) {
-                 Log::error("Charge Creation  => ".$e->getMessage());
+                Log::error("Charge Creation  => " . $e->getMessage());
                 $notify[] = ['error', $e->getMessage()];
             }
         } catch (\Exception $e) {
-            Log::error("Token Creation => ".$e->getMessage());
+            Log::error("Token Creation => " . $e->getMessage());
             $notify[] = ['error', $e->getMessage()];
         }
 
-
         return redirect()->route(gatewayRedirectUrl())->withNotify($notify);
     }
-    
+
     public function ipnApi(Request $request)
     {
         if ($request->is('api/*')) {
@@ -114,7 +112,7 @@ class ProcessController extends Controller
         }
 
         $track = $request->track;
-        Log:info("You placed an order against this trx = " . $track);
+        info("You placed an order against this trx = " . $track);
         $data = Deposit::where('trx', $track)->orderBy('id', 'DESC')->first();
         if ($data->status == 1) {
             return $this->respondWithError('Invalid Request!');

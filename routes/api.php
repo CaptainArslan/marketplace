@@ -72,7 +72,21 @@ Route::middleware('jwt.verify')->group(function () {
         Route::get('/view/{ticket}', 'TicketController@viewTicket')->name('ticket.show');
         Route::post('/reply/{ticket}', 'TicketController@replyTicket')->name('ticket.reply');
         Route::post('rating', 'UserController@rating')->name('rating');
-        //Product Download
+        
+        //Product 
+        Route::get('product/all', 'ProductController@allProduct')->name('product.all');
+        Route::get('product/new', 'ProductController@newProduct')->name('product.new');
+        Route::post('product/store', 'ProductController@storeProduct')->name('product.store');
+        Route::get('product/edit/{id}', 'ProductController@editProduct')->name('product.edit');
+        Route::post('product/update/{id}', 'ProductController@updateProduct')->name('product.update');
+        Route::post('product/delete', 'ProductController@deleteProduct')->name('product.delete');
+
+        // sell
+        Route::get('sells-log', 'UserController@sellLog')->name('sell.log');
+        Route::get('track-sell', 'UserController@trackSell')->name('track.sell');
+        Route::post('track-sell-search', 'UserController@trackSellSearch')->name('track.sell.search');
+        Route::get('customfield/all', 'UserController@allCustomfield')->name('allCustomfield');
+
         Route::get('download/{id}', 'UserController@download')->name('download');
         Route::get('invoice/{id}', 'UserController@invoice')->name('invoice');
     });

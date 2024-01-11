@@ -23,10 +23,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use File;
 use Yajra\DataTables\DataTables;
-use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
+    public $activeTemplate;
+
     public function __construct()
     {
         $this->activeTemplate = activeTemplate();
@@ -34,6 +35,7 @@ class ProductController extends Controller
 
     public function allProduct(Request $request)
     {
+
         $page_title = 'All Products';
         $empty_message = 'No data found';
         $allowedplan = UserSubscription::where('user_id', auth()->user()->id)->where('status', 1)->with('subscriptions')->first();
@@ -56,10 +58,21 @@ class ProductController extends Controller
             $limit = $allowedplan->allowed_product;
         }
 
+        $token = '';
+        $api = false;
+        if ($request->is('api/*')) {
+            $token = $request->token;
+            $api = true;
+            $partial = false;
+        }
+
         if ($request->ajax()) {
             $data = Product::with(['category', 'subcategory'])->whereUserId(auth()->id())->whereRaw("status !=  4")->latest()->take($limit)->get();
             return DataTables::of($data)
                 ->addIndexColumn()
+                ->addColumn('encrupted_id', function ($row) {
+                    return Crypt::encrypt($row->id);
+                })
                 ->editColumn('category_id', function ($row) {
                     return $row->category->name;
                 })
@@ -105,10 +118,12 @@ class ProductController extends Controller
                     }
                 })
 
-                ->addColumn('action', function ($row) {
-                    $btn='';
+                ->addColumn('action', function ($row) use ($request) {
+                    $btn = '';
                     if ($row->status == 1 && ($row->update_status == 0 || $row->update_status == 2 || $row->update_status == 3)) {
-                        $btn = '<a href="' . route('user.product.edit', Crypt::encrypt($row->id)) . '"class="icon-btn bg--primary"><i class="las la-edit" data-bs-toggle="tooltip"
+                        $url = ($request->api == true) ? route('iframe.api.product.edit', Crypt::encrypt($row->id)).'?token='.$request->token : route('user.product.edit', Crypt::encrypt($row->id));
+
+                        $btn = '<a href="' . $url . '"class="icon-btn bg--primary"><i class="las la-edit" data-bs-toggle="tooltip"
                                                     data-bs-placement="top" title="Update"></i></a>
                                             <a href="javascript:void(0)" class="icon-btn bg--danger" data-bs-toggle="modal"
                                                 data-bs-target="#deleteModal"><i
@@ -130,26 +145,26 @@ class ProductController extends Controller
         // $products = ->paginate(getPaginate());
         return view($this->activeTemplate . 'user.product.index', get_defined_vars());
     }
-    
-    public function getShortcode($id){
-        if($id){
-          $product = Product::where('status', '!=', 4)
-        ->where('user_id', auth()->user()->id)
-        ->where('sub_category_id', $id) 
-        ->orderBy('created_at', 'desc') 
-        ->first(); 
-        if($product){
-             return response()->json(['status'=>'success','code'=>$product->product_code]);
-        }else{
-            return response()->json(['status'=>'success','code'=>'NoProduct']);
-        }
-       
-        }else{
+
+    public function getShortcode($id)
+    {
+        if ($id) {
+            $product = Product::where('status', '!=', 4)
+                ->where('user_id', auth()->user()->id)
+                ->where('sub_category_id', $id)
+                ->orderBy('created_at', 'desc')
+                ->first();
+            if ($product) {
+                return response()->json(['status' => 'success', 'code' => $product->product_code]);
+            } else {
+                return response()->json(['status' => 'success', 'code' => 'NoProduct']);
+            }
+        } else {
             return "";
         }
     }
-    
-    public function newProduct()
+
+    public function newProduct(Request $request)
     {
         $page_title = 'New Product';
         // $allowedproduct = UserSubscription::where('user_id', auth()->user()->id)->where('status', 1)->with('subscriptions')->first();
@@ -171,6 +186,13 @@ class ProductController extends Controller
         // } else {
         //     $customfield_status = 0;
         // }
+        $token = '';
+
+        if ($request->is('api/*')) {
+            $token = $request->token;
+            $api = true;
+            $partial = false;
+        }
         $categories = Category::where('status', '1')->with(['subcategories' => function ($q) {
             $q->where('status', 1)->get();
         }, 'categoryDetails'])->latest()->get();
@@ -181,7 +203,6 @@ class ProductController extends Controller
 
     public function storeProduct(Request $request)
     {
-
         $validation_rule = [
             'category_id' => 'required|numeric|gt:0',
             'sub_category_id' => 'required|numeric|gt:0',
@@ -332,7 +353,7 @@ class ProductController extends Controller
         if (auth()->user()->is_approve == 1) {
             $product->status = 1;
         }
-        $product->code=get_productcode($request->category_id, $request->sub_category_id, $request->name);
+        $product->code = get_productcode($request->category_id, $request->sub_category_id, $request->name);
         $product->save();
         if ($request->varient_title) {
             $price = $request->varient_price;
@@ -394,17 +415,30 @@ class ProductController extends Controller
         return redirect()->route('user.product.all')->withNotify($notify);
     }
 
-    public function editProduct($id)
+    public function editProduct(Request $request, $id)
     {
         $page_title = 'Edit Product';
-        $product = Product::where('id', Crypt::decrypt($id))->where('user_id', auth()->user()->id)->with(['category', 'subcategory', 'bumps', 'othercategoriesproduct', 'productcustomfields'])->first();
+        
+        $user = auth()->user();
+
+        $product = Product::where('id', Crypt::decrypt($id))->where('user_id', $user->id)->with(['category', 'subcategory', 'bumps', 'othercategoriesproduct', 'productcustomfields'])->first();
         $productcustomfields = ProductCustomField::all();
-        $customfield = CustomField::where('status', 1)->where('user_id', auth()->user()->id)->get();
-        if ($product->user_id != auth()->user()->id) {
+        $customfield = CustomField::where('status', 1)->where('user_id', $user->id)->get();
+        if ($product->user_id != $user->id) {
             $notify[] = ['error', 'Yor are not authorized to edit this product'];
             return back()->withNotify($notify);
         }
+
         $action = route('user.product.update', Crypt::encrypt($product->id));
+
+        $api = false;
+        $token = '';
+        if ($request->is('api/*')) {
+            $token = $request->token;
+            $api = true;
+            $partial = false;
+            $action = route('iframe.api.product.update', Crypt::encrypt($product->id)) . "?token=" . $request->token;
+        }
 
         return view($this->activeTemplate . 'user.product.edit', get_defined_vars());
     }
@@ -428,7 +462,6 @@ class ProductController extends Controller
             'message' => 'nullable|max:255',
             'tag.*' => 'required|max:255',
         ];
-
 
         $product = Product::findOrFail(Crypt::decrypt($id));
 
@@ -611,9 +644,6 @@ class ProductController extends Controller
                     }
                 }
             }
-
-
-
 
             $notify[] = ['success', 'Your action is on process. Wait for the approval'];
             return redirect()->route('user.product.all')->withNotify($notify);

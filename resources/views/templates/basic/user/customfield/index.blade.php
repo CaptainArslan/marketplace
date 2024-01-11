@@ -1,89 +1,101 @@
 @extends($activeTemplate . 'layouts.frontend')
 @section('content')
-    <div class="pb-100">
-        @include($activeTemplate . 'partials.dashboardHeader')
-        @include($activeTemplate . 'user.customsetting')
+<div class="pb-100">
+    @if ($partial)
+    @include($activeTemplate . 'partials.dashboardHeader')
+    @endif
+    @include($activeTemplate . 'user.customsetting')
     @endsection
     @section('customsetting')
-        <div class="dashboard-area pt-50">
-            <div class="container">
-                <div class="row">
-                    <div class="col-lg-12">
-                        @if (isset($warning) && $warning == 1)
-                            <div class="alert alert-danger">
-                                <strong>Attention Please!</strong> Please Upgrade the Plan To add the Custom Setting.
-                            </div>
-                        @else
-                            <div class="text-end">
-                                <a class="btn btn-sm btn--base" href="{{ route('user.customfield.new') }}">
-                                    <i class="las la-plus-circle fs-6"></i> @lang('Add New')
-                                </a>
-                            </div>
-                            <div class="table-responsive--md mt-4">
-
-                                <table id='data-table' class="table table-bordered data-table custom--table">
-                                    <thead>
-                                        <tr>
-                                            <th>@lang('FieldName')</th>
-                                            <th>@lang('FieldType')</th>
-                                            <th>@lang('Fieldoptions')</th>
-                                            <th>@lang('Labels')</th>
-                                            <th>@lang('Placeholder')</th>
-                                            <th>@lang('Status')</th>
-                                            <th>@lang('Action')</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                    </tbody>
-                                </table>
-                            </div>
+    <div class="dashboard-area pt-50">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    @if (isset($warning) && $warning == 1)
+                    <div class="alert alert-danger">
+                        <strong>Attention Please!</strong> Please Upgrade the Plan To add the Custom Setting.
                     </div>
-                    @endif
+                    @else
+                    <div class="text-end">
+                        <a class="btn btn-sm btn--base" href="{{ route('user.customfield.new') }}">
+                            <i class="las la-plus-circle fs-6"></i> @lang('Add New')
+                        </a>
+                    </div>
+                    <div class="table-responsive--md mt-4">
+
+                        <table id='data-table' class="table table-bordered data-table custom--table">
+                            <thead>
+                                <tr>
+                                    <th>@lang('FieldName')</th>
+                                    <th>@lang('FieldType')</th>
+                                    <th>@lang('Fieldoptions')</th>
+                                    <th>@lang('Labels')</th>
+                                    <th>@lang('Placeholder')</th>
+                                    <th>@lang('Status')</th>
+                                    <th>@lang('Action')</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+                @endif
             </div>
         </div>
     </div>
+</div>
 @endsection
 @push('script')
-    <script>
-        "use strict";
-        $(document).ready(function() {
-            var table = $('#data-table').DataTable({
-                processing: true,
-                serverSide: true,
-                ajax: "{{ route('user.allCustomfield') }}",
-                columns: [{
-                        data: 'name',
-                        name: 'name'
-                    },
-                    {
-                        data: 'type',
-                        name: 'type'
-                    }, {
-                        data: 'fieldoption',
-                        name: 'fieldoption'
-                    }, {
-                        data: 'labels',
-                        name: 'labels'
-                    },
-                    {
-                        data: 'placeholder',
-                        name: 'placeholder'
-                    },
-                    {
-                        data: 'status',
-                        name: 'status'
-                    },
-                    {
-                        data: 'action',
-                        name: 'action',
-                        orderable: false,
-                        searchable: false
-                    },
-                ],
-                "createdRow": function(row, data, dataIndex) {
-                    var modalHtml = `
-           <div id="approveModal${data.id}" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+<script>
+    "use strict";
+
+    var api = @json($api);
+    var token = @json($token);
+
+    let val = {
+        ":token": token,
+        ':api': api,
+        '&amp;': "&"
+    }
+
+    $(document).ready(function() {
+        var table = $('#data-table').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: "{{ route('user.allCustomfield') }}",
+            columns: [{
+                    data: 'name',
+                    name: 'name'
+                },
+                {
+                    data: 'type',
+                    name: 'type'
+                }, {
+                    data: 'fieldoption',
+                    name: 'fieldoption'
+                }, {
+                    data: 'labels',
+                    name: 'labels'
+                },
+                {
+                    data: 'placeholder',
+                    name: 'placeholder'
+                },
+                {
+                    data: 'status',
+                    name: 'status'
+                },
+                {
+                    data: 'action',
+                    name: 'action',
+                    orderable: false,
+                    searchable: false
+                },
+            ],
+            "createdRow": function(row, data, dataIndex) {
+                var modalHtml = `
+            <div id="approveModal${data.id}" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
         aria-labelledby="staticBackdropLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -97,13 +109,13 @@
                         <li class="list-group-item dark-bg">@lang('Type') :${data.type}</li>
                         <li class="list-group-item dark-bg">@lang('Placeholder') :${data.placeholder}
                         </li>`;
-                    if (data.status === '1') {
-                        modalHtml += `<li class="list-group-item dark-bg">Status : Active<li>`;
-                    } else if (data.status === 0) {
-                        modalHtml += `<li class="list-group-item dark-bg">Status : Disabled<li>`;
-                    }
+                if (data.status === '1') {
+                    modalHtml += `<li class="list-group-item dark-bg">Status : Active<li>`;
+                } else if (data.status === 0) {
+                    modalHtml += `<li class="list-group-item dark-bg">Status : Disabled<li>`;
+                }
 
-                    modalHtml += `</ul>
+                modalHtml += `</ul>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn--danger btn-sm"
@@ -112,9 +124,9 @@
             </div>
         </div>
     </div>`;
-                    $('body').append(modalHtml);
+                $('body').append(modalHtml);
 
-                    var dellModal = `<div id="deleteModal${data.id}" class="modal fade" data-bs-backdrop="static"
+                var dellModal = `<div id="deleteModal${data.id}" class="modal fade" data-bs-backdrop="static"
                                         data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel"
                                         aria-hidden="true">>
                                         <div class="modal-dialog">
@@ -142,9 +154,9 @@
                                         </div>
                                     </div>`;
 
-                    $('body').append(dellModal);
-                    //  {{-- ACTIVATE METHOD MODAL --}}
-                    var activeModal = `<div id="activateModal${data.id}" class="modal fade" tabindex="-1" role="dialog">
+                $('body').append(dellModal);
+                //  {{-- ACTIVATE METHOD MODAL --}}
+                var activeModal = `<div id="activateModal${data.id}" class="modal fade" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -168,10 +180,10 @@
             </div>
         </div>
     </div>`;
-                    $('body').append(activeModal);
+                $('body').append(activeModal);
 
-                    // {{-- DEACTIVATE METHOD MODAL --}}
-                    var deactiveModal = `<div id="deactivateModal${data.id}" class="modal fade" tabindex="-1" role="dialog">
+                // {{-- DEACTIVATE METHOD MODAL --}}
+                var deactiveModal = `<div id="deactivateModal${data.id}" class="modal fade" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -195,12 +207,9 @@
             </div>
         </div>
     </div>`;
-                    $('body').append(deactiveModal);
-
-
-
-                }
-            });
+                $('body').append(deactiveModal);
+            }
         });
-    </script>
+    });
+</script>
 @endpush

@@ -860,6 +860,13 @@ class UserController extends Controller
     {
         $page_title = 'Sell Logs';
         $empty_message = 'No data found.';
+        $token = '';
+        $api = false;
+        if ($request->is('api/*')) {
+            $token = $request->token;
+            $api = true;
+            $partial = false;
+        }
         if ($request->ajax()) {
             $data = Sell::where('author_id', Auth::id())->where('status', 1)->with('product', 'productcustomfields', 'customfieldresponse', 'bumpresponses');
             return DataTables::of($data)
@@ -933,11 +940,16 @@ class UserController extends Controller
         return view($this->activeTemplate . 'user.sell_log', get_defined_vars());
     }
 
-    public function trackSell()
+    public function trackSell(Request $request)
     {
         $page_title = 'Track Sells';
         $result = null;
-        return view($this->activeTemplate . 'user.track_sell', compact('page_title', 'result'));
+        $api = false;
+        if ($request->is('api/*')) {
+            $api = true;
+            $partial = false;
+        }
+        return view($this->activeTemplate . 'user.track_sell', get_defined_vars());
     }
 
     public function trackSellSearch(Request $request)
@@ -1028,6 +1040,13 @@ class UserController extends Controller
         //         $warning = 1;
         //     }
         // }
+        $token = '';
+        $api = false;
+        if ($request->is('api/*')) {
+            $token = $request->token;
+            $api = true;
+            $partial = false;
+        }
         if ($request->ajax()) {
             $data = CustomField::where('user_id', auth()->user()->id)->with('customfielditem');
             return DataTables::of($data)
