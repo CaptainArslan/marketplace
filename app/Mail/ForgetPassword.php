@@ -15,17 +15,23 @@ class ForgetPassword extends Mailable
     use Queueable, SerializesModels;
 
     public $code;
+    public $user;
+    public $userBrowserInfo;
+    public $userIpInfo;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    public function __construct($code)
+    public function __construct($code, $user = null, $userBrowserInfo = null, $userIpInfo = null)
     {
         $this->code = $code;
+        $this->user = $user;
+        $this->userBrowserInfo = $userBrowserInfo;
+        $this->userIpInfo = $userIpInfo;
     }
-    
+
     /**
      * Get the message envelope.
      *
@@ -49,6 +55,11 @@ class ForgetPassword extends Mailable
             markdown: 'mail.auth.forget-password',
             with: [
                 'code' => $this->code,
+                'user' => $this->user,
+                'operating_system' => $this->userBrowserInfo['os_platform'],
+                'browser' => $this->userBrowserInfo['browser'],
+                'ip' => $this->userIpInfo['ip'],
+                'time' => $this->userIpInfo['time']
             ],
         );
     }

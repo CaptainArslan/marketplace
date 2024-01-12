@@ -107,7 +107,7 @@
                                     <div class="col-lg-5 form-group">
                                         <label>@lang('Extended Price') <sup class="text--danger">*</sup></label>
                                         <div class="input-group mb-2 mr-sm-2">
-                                            <input type="number" class="form--control extended-price" name="extended_price" placeholder="@lang('Enter Amount')" step="any" required>
+                                            <input type="number" class="form--control extended-price" name="extended_price" placeholder="@lang('Enter Amount')" step="any">
                                             <div class="input-group-append">
                                                 <div class="input-group-text h-100">{{ $general->cur_text }}</div>
                                             </div>
@@ -183,15 +183,17 @@
                                         </select>
                                     </div>
 
-                                    <div class="col-lg-12 form-group zip d-none">
-                                        <label>@lang('Upload File') <code>(@lang('only zip'))</code> <sup class="text--danger">*</sup></label>
-                                        <div id="uploader" class="it">
-                                            <div class="row uploadDoc">
-                                                <div class="col-xxl-12 col-xl-12">
-                                                    <div class="fileUpload btn btn-orange">
-                                                        <img src="{{ asset('assets/images/first.svg') }}" class="icon">
-                                                        <span class="upl fs-12px" id="upload">@lang('Upload')</span>
-                                                        <input type="file" class="upload up from--control zipfile" name="file" accept=".zip" onchange="fileURL(this);" />
+                                    <div class="col-12">
+                                        <div class="col-lg-3 form-group zip d-none">
+                                            <label>@lang('Upload File') <code>(@lang('only zip'))</code> <sup class="text--danger">*</sup></label>
+                                            <div id="uploader" class="it">
+                                                <div class="row uploadDoc">
+                                                    <div class="col-xxl-12 col-xl-12">
+                                                        <div class="fileUpload btn btn-orange">
+                                                            <img src="{{ asset('assets/images/first.svg') }}" class="icon">
+                                                            <span class="upl fs-12px" id="upload">@lang('Upload')</span>
+                                                            <input type="file" class="upload up from--control zipfile" name="file" accept=".zip" onchange="fileURL(this);" />
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -233,7 +235,7 @@
                                                         <div class="fileUpload btn btn-orange">
                                                             <img src="{{ asset('assets/images/first.svg') }}" class="icon">
                                                             <span class="upl fs-12px" id="upload">@lang('Upload')</span>
-                                                            <input type="file" class="upload up from--control validate" name="screenshot[]" accept=".jpg,.jpeg,.png" required onchange="screenshotURL(this);" />
+                                                            <input type="file" class="upload up from--control validate" name="screenshot[]" accept=".jpg,.jpeg,.png" onchange="screenshotURL(this);" />
                                                         </div>
                                                     </div>
                                                 </div>
@@ -745,7 +747,7 @@
                                                 <button type="button" class="input-field-close removeBtn"><i class="las la-times"></i></button>
                                                 <img src="{{ asset('assets/images/first.svg') }}" class="icon">
                                                 <span class="upl fs-12px" id="upload">@lang('Upload')</span>
-                                                <input type="file" class="upload up from--control validate" name="screenshot[]" accept=".jpg,.jpeg,.png" required onchange="screenshotURL(this);" />
+                                                <input type="file" class="upload up from--control validate" name="screenshot[]" accept=".jpg,.jpeg,.png"  onchange="screenshotURL(this);" />
                                             </div>
                                         </div>
                                     </div>

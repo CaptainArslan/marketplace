@@ -214,12 +214,14 @@ class ProductController extends Controller
             'name' => 'required|max:191',
             'image' => ['required', 'image', new FileTypeValidate(['jpeg', 'jpg', 'png'])],
             // 'file' => ['required', 'mimes:zip', new FileTypeValidate(['zip'])],
-            'screenshot' => 'required|array|min:1',
-            'screenshot.*' => ['required', 'image', new FileTypeValidate(['jpeg', 'jpg', 'png'])],
+            'screenshot' => 'nullable|array|min:1',
+            'screenshot.*' => ['nullable', 'image', new FileTypeValidate(['jpeg', 'jpg', 'png'])],
             'demo_link' => 'required|url|max:255',
             'message' => 'nullable|max:255',
             'tag.*' => 'required|max:255',
         ];
+
+        // dd($request->all());
         $category = Category::where('status', 1)->findOrFail($request->category_id);
         $originalcategory = Category::where('name', 'like', "others")->first();
 
@@ -304,7 +306,7 @@ class ProductController extends Controller
                     } else {
                         $pFile = $responseValue[1];
                     }
-                } catch (Exception $e) {
+                } catch (\Exception $e) {
                     return response()->json(['errors' => 'Could not upload the Video']);
                 }
                 $server = 1;
@@ -329,7 +331,7 @@ class ProductController extends Controller
         $product->category_id       = $request->category_id;
         $product->sub_category_id   = $request->sub_category_id;
         $product->regular_price     = $request->regular_price + $category->buyer_fee;
-        $product->extended_price    = $request->extended_price + $category->buyer_fee;
+        $product->extended_price    = ($request->extended_price) ? $request->extended_price + $category->buyer_fee : $request->regular_price + $category->buyer_fee;
         $product->support           = $request->support;
         $product->support_charge    = $request->support_charge ?? 0;
         $product->support_discount  = $request->support_discount ?? 0;

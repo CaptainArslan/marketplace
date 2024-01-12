@@ -76,7 +76,7 @@ class ForgotPasswordController extends Controller
         $userIpInfo = getIpInfo();
         $userBrowserInfo = osBrowser();
         try {
-            Mail::to($user->email)->send(new ForgetPassword($code));
+            Mail::to($user->email)->send(new ForgetPassword($code, $user, $userBrowserInfo, $userIpInfo));
         } catch (\Throwable $th) {
             Log::error('Error occured while sending forget password email! ' . $th->getMessage());
             if ($request->is('api/*')) {
@@ -147,8 +147,9 @@ class ForgotPasswordController extends Controller
             }
 
             PasswordReset::where('email', $request->email)->update(['status' => 1]);
-            User::where('email', $request->email)->update(['password' => Hash::make(base64_decode($request->password))]);
-            return $this->respondWithSuccess("Password has been updated!");
+            // User::where('email', $request->email)->update(['password' => Hash::make(base64_decode($request->password))]);
+            User::where('email', $request->email)->update(['password' => Hash::make($request->password)]);
+            return $this->respondWithSuccess(null, "Password has been updated!");
         }
 
         $notify[] = ['success', 'You can change your password.'];
