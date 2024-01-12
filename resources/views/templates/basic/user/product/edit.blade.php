@@ -344,7 +344,7 @@
                                             @endforeach
 
                                             <div class="col-md-12 form-group">
-                                                <label>@lang('Tags') <sup class="text--danger">*</sup></label>
+                                                <label>@lang('Keywords') <sup class="text--danger">*</sup></label>
                                                 <code>(@lang('Separate multiple tags by') ,(@lang('comma')) @lang('or')
                                                     @lang('enter') @lang('key'))</code>
                                                 <select name="tag[]" class="form--control select2-auto-tokenize"
@@ -363,7 +363,8 @@
                                                 <textarea name="description" class="form-control nicEdit" rows="15" placeholder="@lang('Enter your message')">{{ $product->description }}</textarea>
                                             </div>
                                             <div class="col-lg-12 form-group">
-                                                <label>@lang('Message To Reviewer') <code>(@lang('Max 255 charecters'))</code></label>
+                                                {{-- <label>@lang('MessageToReviewer')<code>(@lang('Max255charecters'))</code></label>- --}}
+                                                <label>@lang('Message To Admin') <code>(@lang('Max 255 charecters'))</code></label>
                                                 <textarea name="message" class="form--control" placeholder="@lang('Enter your message')">{{ $product->message }}</textarea>
                                             </div>
                                             <div class="col-md-4 form-group">

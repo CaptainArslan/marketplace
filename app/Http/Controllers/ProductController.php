@@ -187,7 +187,7 @@ class ProductController extends Controller
         //     $customfield_status = 0;
         // }
         $token = '';
-
+        $api = false;
         if ($request->is('api/*')) {
             $token = $request->token;
             $api = true;

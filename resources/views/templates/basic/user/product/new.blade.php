@@ -139,8 +139,8 @@
                                         <label>@lang('Support') <sup class="text--danger">*</sup></label>
                                         <small><code>({{ $general->regular }} @lang('months'))</code></small>
                                         <select name="support" id="support" class="form--control" required>
-                                            <option value="1">@lang('Yes')</option>
                                             <option value="0">@lang('No')</option>
+                                            <option value="1">@lang('Yes')</option>
                                         </select>
                                     </div>
                                     <div class="col-md-5 form-group" id="support-charge-div">
@@ -154,7 +154,7 @@
 
                                     </div>
                                     <div class="col-lg-12 form-group">
-                                        <label>@lang('Tags') <sup class="text--danger">*</sup></label>
+                                        <label>@lang('Keywords') <sup class="text--danger">*</sup></label>
                                         <select name="tag[]" class="form--control select2-auto-tokenize" multiple="multiple">
                                         </select>
                                     </div>
@@ -163,7 +163,8 @@
                                         <textarea name="description" class="form-control nicEdit" rows="15" placeholder="@lang('Enter your message')"></textarea>
                                     </div>
                                     <div class="col-lg-12 form-group">
-                                        <label>@lang('Message To Reviewer') <code>(@lang('Max 255 charecters'))</code></label>
+                                        {{-- <label>@lang('Message To Reviewer') <code>(@lang('Max 255 charecters'))</code></label> --}}
+                                        <label>@lang('Message To Admin') <code>(@lang('Max 255 charecters'))</code></label>
                                         <textarea name="message" class="form--control" placeholder="@lang('Enter your message')"></textarea>
                                     </div>
 
@@ -306,31 +307,28 @@
         }
         return null;
     }
-    $("body").on('change', "#subcategory", function(e) {
-        e.preventDefault();
-        let subcatid = $(this).find('option:selected').val();
+    // $("body").on('change', "#subcategory", function(e) {
+    //     e.preventDefault();
+    //     let subcatid = $(this).find('option:selected').val();
+    //     let shortcode = findSubcategoryShortcode(subcatid);
+    // });
+    // $("body").on('change', "#category", function(e) {
+    //     e.preventDefault();
+    //     let otherid = $(this).find('option:selected').attr('data-name');
+    //     if (otherid === "Funnels") {
 
-        let shortcode = findSubcategoryShortcode(subcatid);
-
-
-    });
-    $("body").on('change', "#category", function(e) {
-        e.preventDefault();
-        let otherid = $(this).find('option:selected').attr('data-name');
-        if (otherid === "Funnels") {
-
-            $("input[name='shearablelink']").prop("required", 'true')
-        } else {
-            $("input[name='shearablelink']").prop("required", 'false')
-        }
-        if (otherid === "Others") {
-            $(".othercategory").removeClass('d-none');
-            // $("input[name='othercategory']").prop("required", 'false');
-        } else {
-            $(".othercategory").addClass('d-none');
-            // $("input[name='othercategory']").prop("required", 'false')
-        }
-    });
+    //         $("input[name='shearablelink']").prop("required", 'true')
+    //     } else {
+    //         $("input[name='shearablelink']").prop("required", 'false')
+    //     }
+    //     if (otherid === "Others") {
+    //         $(".othercategory").removeClass('d-none');
+    //         // $("input[name='othercategory']").prop("required", 'false');
+    //     } else {
+    //         $(".othercategory").addClass('d-none');
+    //         // $("input[name='othercategory']").prop("required", 'false')
+    //     }
+    // });
     $('#uploadchoice').on('change', function(e) {
         e.preventDefault();
         var data = $(this).val();
@@ -457,16 +455,18 @@
     });
 
     $('.extended-price').on('focusout', function() {
-        var value = $('.extended-price').val();
-        var buyerFee = $('.buyer-fee').val();
+        var value = $('.extended-price').val() ? $('.extended-price').val() : 0;
+        var buyerFee = $('.buyer-fee').val() ? 0 : '';
         var authorFee = "{{ auth()->user()->levell->product_charge }}";
+
+        console.log(value + " " + buyerFee + " " + authorFee);
 
         var minPrice = parseFloat(buyerFee) + parseFloat((parseFloat(buyerFee) * parseInt(authorFee)) / 100);
 
         if (parseFloat(value) < parseFloat(minPrice)) {
             alert('Minimum price ' + minPrice);
             $('.extended-price').val('');
-            $('.final-extended-price').val(0);
+            $('.final-extended-price').val('');
         }
 
         if (parseFloat(value) >= parseFloat(minPrice)) {
