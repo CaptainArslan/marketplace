@@ -436,7 +436,7 @@
         var buyerFee = $('.buyer-fee').val();
         var authorFee = "{{ auth()->user()->levell->product_charge }}";
 
-        console.log("value = " + value + " buyer fee= " + buyerFee + " author fee =" + authorFee);
+        // console.log("value = " + value + " buyer fee= " + buyerFee + " author fee =" + authorFee);
 
         var minPrice = parseFloat(buyerFee) + parseFloat((parseFloat(buyerFee) * parseInt(authorFee)) / 100);
         if (parseFloat(value) < parseFloat(minPrice)) {
@@ -463,7 +463,7 @@
         var buyerFee = $('.buyer-fee').val();
         var authorFee = "{{ auth()->user()->levell->product_charge }}";
 
-        console.log("value = " + value + " buyer fee= " + buyerFee + " author fee =" + authorFee);
+        // console.log("value = " + value + " buyer fee= " + buyerFee + " author fee =" + authorFee);
 
         var minPrice = parseFloat(buyerFee) + parseFloat((parseFloat(buyerFee) * parseInt(authorFee)) / 100);
 
