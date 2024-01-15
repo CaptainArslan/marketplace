@@ -204,10 +204,10 @@ class ProductController extends Controller
     public function storeProduct(Request $request)
     {
         $validation_rule = [
-            'category_id' => 'required|numeric|gt:0',
-            'sub_category_id' => 'required|numeric|gt:0',
+            'category_id' => 'required|exists:categories,id',
+            'sub_category_id' => 'required|exists:sub_categories,id',
             'regular_price' => 'required|numeric|gt:0',
-            'extended_price' => 'required|numeric|gt:0',
+            'extended_price' => 'nullable|numeric|gt:0',
             'support' => 'required|integer|max:1',
             'support_discount' => 'sometimes|required|numeric|max:100',
             'support_charge' => 'sometimes|required|numeric|max:100',
@@ -221,45 +221,48 @@ class ProductController extends Controller
             'tag.*' => 'required|max:255',
         ];
 
-        // dd($request->all());
+        
         $category = Category::where('status', 1)->findOrFail($request->category_id);
         $originalcategory = Category::where('name', 'like', "others")->first();
-
+        
         $subcategory = SubCategory::where('status', 1)->findOrFail($request->sub_category_id);
         $subcategoryId = SubCategory::where('category_id', $request->category_id)->where('status', 1)->pluck('id')->toArray();
-
-
-
-
+        
         if (!in_array($subcategory->id, $subcategoryId)) {
+            info("Not found in " . json_encode($subcategoryId));
             $notify[] = ['error', 'Something goes wrong'];
             return back()->withNotify($notify);
         }
-
+        
         $categoryDetails        = $category->categoryDetails;
         $categoryDetailsInput   = $request['c_details'] ?? [];
 
         $minPrice = $category->buyer_fee + (($category->buyer_fee * auth()->user()->levell->product_charge) / 100);
-
-        if (($request->regular_price < $minPrice) || ($request->extended_price < $minPrice)) {
+        
+        $extended_price = $request->extended_price ?? $request->regular_price;
+        
+        if (($request->regular_price < $minPrice) || ($extended_price < $minPrice)) {
+            info('Minimum price is ' . $minPrice);
             $notify[] = ['error', 'Minimum price is ' . $minPrice];
             return back()->withNotify($notify);
         }
-
+        
+        // dd($request->all());
         if (count($categoryDetailsInput) != count($categoryDetails)) {
+            info('Minimum price is ' . $minPrice);
             $notify[] = ['error', 'Something goes wrong.'];
             return back()->withNotify($notify);
         }
-
+        
         foreach ($categoryDetails->pluck('name') as $item) {
+            info('c_details.' . str_replace(' ', '_', strtolower($item)));
             $validation_rule['c_details.' . str_replace(' ', '_', strtolower($item))] = 'required';
         }
-
         $request->validate($validation_rule, [
             'tag.*.required' => 'Add at least one tag',
             'tag.*.max' => 'Total options should not be more than 191 characters'
         ]);
-
+        
 
         $pImage = '';
         if ($request->hasFile('image')) {
@@ -269,6 +272,7 @@ class ProductController extends Controller
                 $thumb = imagePath()['p_image']['thumb'];
                 $pImage = uploadImage($request->image, $location, $size, '', $thumb);
             } catch (\Exception $exp) {
+                info($exp->getMessage());
                 $notify[] = ['error', 'Could not upload the image'];
                 return back()->withNotify($notify);
             }
@@ -279,10 +283,8 @@ class ProductController extends Controller
         $pFile = '';
 
         if ($request->hasFile('file')) {
-
             $disk = $general->server;
             $date = date('Y') . '/' . date('m') . '/' . date('d');
-
             if ($disk == 'current') {
                 try {
                     $location = imagePath()['p_file']['path'];
@@ -349,7 +351,7 @@ class ProductController extends Controller
         $product->demo_link = $request->demo_link;
         $product->description = $request->description;
 
-        $product->tag = array_values($request->tag);
+        $product->tag = array_values($request->tag ?? []);
         $product->message = $request->message;
         $product->category_details = $categoryDetailsInput;
         if (auth()->user()->is_approve == 1) {

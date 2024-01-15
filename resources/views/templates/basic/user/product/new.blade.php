@@ -436,11 +436,13 @@
         var buyerFee = $('.buyer-fee').val();
         var authorFee = "{{ auth()->user()->levell->product_charge }}";
 
+        console.log("value = " + value + " buyer fee= " + buyerFee + " author fee =" + authorFee);
+
         var minPrice = parseFloat(buyerFee) + parseFloat((parseFloat(buyerFee) * parseInt(authorFee)) / 100);
         if (parseFloat(value) < parseFloat(minPrice)) {
             alert('Minimum price ' + minPrice);
             $('.regular-price').val('');
-            $('.final-regular-price').val(0);
+            $('.final-regular-price').val('');
         }
 
         if (parseFloat(value) >= parseFloat(minPrice)) {
@@ -458,10 +460,10 @@
 
     $('.extended-price').on('focusout', function() {
         var value = $('.extended-price').val() ? $('.extended-price').val() : 0;
-        var buyerFee = $('.buyer-fee').val() ? 0 : '';
+        var buyerFee = $('.buyer-fee').val();
         var authorFee = "{{ auth()->user()->levell->product_charge }}";
 
-        console.log(value + " " + buyerFee + " " + authorFee);
+        console.log("value = " + value + " buyer fee= " + buyerFee + " author fee =" + authorFee);
 
         var minPrice = parseFloat(buyerFee) + parseFloat((parseFloat(buyerFee) * parseInt(authorFee)) / 100);
 
