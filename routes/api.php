@@ -32,6 +32,7 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+// public routes
 Route::get('/{home?}', 'SiteController@index')->name('homepage');
 Route::get('all-products/{fetch?}', 'SiteController@allProducts')->name('fetch.products');
 Route::get('product/search/{query?}', 'SiteController@productSearch')->name('search.product');
@@ -42,6 +43,7 @@ Route::get('product/cart/{ordernumber?}', 'SellController@carts')->name('carts')
 Route::get('product/remove-cart/{id}', 'SellController@removeCart')->name('remove.cart');
 Route::get('product/empty-cart/{order_number}', 'SellController@emptyCart')->name('empty.cart');
 
+// Authentication
 Route::post('auth/sign-up', 'Auth\RegisterController@register');
 Route::post('auth/sign-in', 'Auth\LoginController@login');
 Route::post('auth/password/reset', 'Auth\ForgotPasswordController@sendResetLinkEmail');
@@ -49,6 +51,7 @@ Route::post('auth/password/update', 'Auth\ForgotPasswordController@verifyCode');
 
 Route::post('test/email', 'Auth\ForgotPasswordController@sendEmail');
 
+// token verified routes
 Route::middleware('jwt.verify')->group(function () {
     Route::post('auth/logout', 'Auth\LoginController@logout');
     Route::post('password/change', 'UserController@submitPassword');
@@ -72,8 +75,8 @@ Route::middleware('jwt.verify')->group(function () {
         Route::get('/view/{ticket}', 'TicketController@viewTicket')->name('ticket.show');
         Route::post('/reply/{ticket}', 'TicketController@replyTicket')->name('ticket.reply');
         Route::post('rating', 'UserController@rating')->name('rating');
-        
-        //Product 
+
+        //Product
         Route::get('product/all', 'ProductController@allProduct')->name('product.all');
         Route::get('product/new', 'ProductController@newProduct')->name('product.new');
         Route::post('product/store', 'ProductController@storeProduct')->name('product.store');
@@ -87,6 +90,10 @@ Route::middleware('jwt.verify')->group(function () {
         Route::post('track-sell-search', 'UserController@trackSellSearch')->name('track.sell.search');
         Route::get('customfield/all', 'UserController@allCustomfield')->name('allCustomfield');
 
+        // subscription
+        Route::get('plans', 'SubscriptionController@getplans')->name('getplans');
+
+        // withdraw
         Route::get('download/{id}', 'UserController@download')->name('download');
         Route::get('invoice/{id}', 'UserController@invoice')->name('invoice');
     });

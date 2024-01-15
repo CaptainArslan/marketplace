@@ -11,6 +11,7 @@ use Illuminate\Validation\ValidationException;
 
 class AuthorizationController extends Controller
 {
+    public $activeTemplate;
     public function __construct()
     {
         return $this->activeTemplate = activeTemplate();
@@ -21,13 +22,13 @@ class AuthorizationController extends Controller
         return ghl_token($request);
     }
     public function goHighLevelDelete(Request $request)
-    {$ghluser = GhlAuth::where('user_id', $request->user_id)->first();
-        if($ghluser){
-        $ghluser->delete();
+    {
+        $ghluser = GhlAuth::where('user_id', $request->user_id)->first();
+        if ($ghluser) {
+            $ghluser->delete();
         }
         $notify[] = ['success', 'Disconnection Successfully'];
         return back()->withNotify($notify);
-
     }
     public function checkValidCode($user, $code, $add_min = 10000)
     {
@@ -85,7 +86,6 @@ class AuthorizationController extends Controller
             } else {
                 return redirect()->route('user.home');
             }
-
         }
 
         return redirect()->route('user.login');
@@ -177,11 +177,14 @@ class AuthorizationController extends Controller
         $user = auth()->user();
 
         $this->validate(
-            $request, [
+            $request,
+            [
                 'code.*' => 'required',
-            ], [
+            ],
+            [
                 'code.*.required' => 'Code is required',
-            ]);
+            ]
+        );
 
         $ga = new GoogleAuthenticator();
 
