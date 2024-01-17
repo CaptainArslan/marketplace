@@ -63,7 +63,7 @@
         var table = $('#data-table').DataTable({
             processing: true,
             serverSide: true,
-            ajax: "{{ route('user.allCustomfield') }}",
+            ajax: api ? decodeURIComponent("{{ route('iframe.api.allCustomfield', ['api' => ':api','token'=>':token']) }}").replace(/:token|:api|&amp;/gm, (m) => (val[m] ?? m)) : "{{ route('user.allCustomfield') }}",
             columns: [{
                     data: 'name',
                     name: 'name'

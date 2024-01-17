@@ -72,7 +72,7 @@ Route::middleware('jwt.verify')->group(function () {
         
         Route::get('ticket', 'TicketController@supportTicket')->name('ticket');
         Route::get('/new/ticket/{id?}', 'TicketController@openSupportTicket')->name('ticket.open');
-        Route::post('/create', 'TicketController@storeSupportTicket')->name('ticket.store');
+        Route::post('ticket/store', 'TicketController@storeSupportTicket')->name('ticket.store');
         Route::get('/view/{ticket}', 'TicketController@viewTicket')->name('ticket.show');
         Route::post('/reply/{ticket}', 'TicketController@replyTicket')->name('ticket.reply');
         Route::post('rating', 'UserController@rating')->name('rating');

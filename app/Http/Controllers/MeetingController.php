@@ -14,6 +14,7 @@ use Yajra\DataTables\DataTables;
 
 class MeetingController extends Controller
 {
+    public $activeTemplate;
     //
     public function __construct()
     {
@@ -26,6 +27,15 @@ class MeetingController extends Controller
         $empty_message = 'No data found';
 
         $user = auth()->user() ?? auth('user')->user();
+        
+        $token = '';
+        $api = false;
+        if ($request->is('api/*')) {
+            $token = $request->token;
+            $api = true;
+            $partial = false;
+        }
+
         if ($request->ajax()) {
             if ($user->seller == 1) {
                 $data = BuyerSellerMeeting::where('author_id', $user->id);
@@ -84,15 +94,11 @@ class MeetingController extends Controller
                 ->rawColumns(['action', 'status'])
                 ->make(true);
         }
-        
-        if(($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
-            $partial = false;
-        }
 
         return view($this->activeTemplate . 'user.zoommeeting.index', get_defined_vars());
     }
-    
-    
+
+
     public function newMeeting($id)
     {
         $page_title = 'New Meeting';

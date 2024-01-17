@@ -1,80 +1,89 @@
 @extends($activeTemplate . 'layouts.frontend')
 @section('content')
-    <div class="pb-100">
-        @if ($partial)
-        @include($activeTemplate . 'partials.dashboardHeader')
-        @endif
-        <div class="dashboard-area pt-50">
-            <div class="container">
-                <div class="row">
-                    <div class="col-lg-12">
+<div class="pb-100">
+    @if ($partial)
+    @include($activeTemplate . 'partials.dashboardHeader')
+    @endif
+    <div class="dashboard-area pt-50">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
 
 
-                        <div class="table-responsive--md mt-4">
+                    <div class="table-responsive--md mt-4">
 
-                            <table id='data-table' class="table table-bordered data-table custom--table">
-                                <thead>
-                                    <tr>
-                                        <th>@lang('MeetingAgenda')</th>
-                                        <th>@lang('Meeting Date')</th>
-                                        <th>@lang('Meeting Time')</th>
-                                        <th>@lang('Meeting Link')</th>
-                                        <th>@lang('Status')</th>
-                                        <th>@lang('Action')</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                        <table id='data-table' class="table table-bordered data-table custom--table">
+                            <thead>
+                                <tr>
+                                    <th>@lang('MeetingAgenda')</th>
+                                    <th>@lang('Meeting Date')</th>
+                                    <th>@lang('Meeting Time')</th>
+                                    <th>@lang('Meeting Link')</th>
+                                    <th>@lang('Status')</th>
+                                    <th>@lang('Action')</th>
+                                </tr>
+                            </thead>
+                            <tbody>
 
-                                </tbody>
-                            </table>
+                            </tbody>
+                        </table>
 
 
-                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 @endsection
 @push('script')
-    <script>
-        "use strict";
-        function getstatus(data) {
-return data.status;
-                    }
-        $(document).ready(function() {
-            var table = $('#data-table').DataTable({
-                processing: true,
-                serverSide: true,
-                ajax: "{{ route('user.meeting.all') }}",
-                columns: [{
-                        data: 'agenda',
-                        name: 'agenda'
-                    },
-                    {
-                        data: 'meeting_date',
-                        name: 'meeting_date'
-                    },
-                    {
-                        data: 'meeting_time',
-                        name: 'meeting_time'
-                    }, {
-                        data: 'meeting_link',
-                        name: 'meeting_link'
-                    },
-                    {
-                        data: 'status',
-                        name: 'status'
-                    },
-                    {
-                        data: 'action',
-                        name: 'action',
-                        orderable: false,
-                        searchable: false
-                    },
-                ], // <-- Missing comma was added here
-                "createdRow": function(row, data, dataIndex) {
-                    var modalHtml = `
+<script>
+    "use strict";
+
+    function getstatus(data) {
+        return data.status;
+    }
+    $(document).ready(function() {
+        var api = @json($api);
+        var token = @json($token);
+
+        let val = {
+            ":token": token,
+            ':api': api,
+            '&amp;': "&"
+        }
+        var table = $('#data-table').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: api ? decodeURIComponent("{{ route('iframe.api.meeting.all', ['api' => ':api','token'=>':token']) }}").replace(/:token|:api|&amp;/gm, (m) => (val[m] ?? m)) : "{{ route('user.meeting.all') }}",
+            columns: [{
+                    data: 'agenda',
+                    name: 'agenda'
+                },
+                {
+                    data: 'meeting_date',
+                    name: 'meeting_date'
+                },
+                {
+                    data: 'meeting_time',
+                    name: 'meeting_time'
+                }, {
+                    data: 'meeting_link',
+                    name: 'meeting_link'
+                },
+                {
+                    data: 'status',
+                    name: 'status'
+                },
+                {
+                    data: 'action',
+                    name: 'action',
+                    orderable: false,
+                    searchable: false
+                },
+            ], // <-- Missing comma was added here
+            "createdRow": function(row, data, dataIndex) {
+                var modalHtml = `
                <div id="approveModal${data.id }" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
         aria-labelledby="staticBackdropLabel" aria-hidden="true">>
         <div class="modal-dialog">
@@ -107,8 +116,8 @@ return data.status;
     `;
 
 
-                    $('body').append(modalHtml);
-                    var responseModal = `<div class="modal col-md-12 fade" id="m_${data.id}" data-bs-backdrop="static" data-bs-keyboard="false"
+                $('body').append(modalHtml);
+                var responseModal = `<div class="modal col-md-12 fade" id="m_${data.id}" data-bs-backdrop="static" data-bs-keyboard="false"
     tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -165,23 +174,23 @@ return data.status;
         </div>
     </div>`;
 
-                    $('body').append(responseModal);
-                    let x = document.querySelector(`#m_${data.id}`);
-                    let xinput = x.querySelector('input[name="meetinglink"]')
-                    xinput.addEventListener('keyup',(e)=>{
-                        let valueInput = e.target.value.trim();
-                        console.log(e.target.value);
-                        if (valueInput != '') {
+                $('body').append(responseModal);
+                let x = document.querySelector(`#m_${data.id}`);
+                let xinput = x.querySelector('input[name="meetinglink"]')
+                xinput.addEventListener('keyup', (e) => {
+                    let valueInput = e.target.value.trim();
+                    console.log(e.target.value);
+                    if (valueInput != '') {
                         console.log('success');
-                            $('.notavbtn').addClass("d-none");
-                            $('.avbtn').removeClass("d-none");
-                        } else {
-                            $('.notavbtn').removeClass("d-none");
-                            $('.avbtn').addClass("d-none");
-                        }
-                    })
-                }
-            });
+                        $('.notavbtn').addClass("d-none");
+                        $('.avbtn').removeClass("d-none");
+                    } else {
+                        $('.notavbtn').removeClass("d-none");
+                        $('.avbtn').addClass("d-none");
+                    }
+                })
+            }
         });
-    </script>
+    });
+</script>
 @endpush
