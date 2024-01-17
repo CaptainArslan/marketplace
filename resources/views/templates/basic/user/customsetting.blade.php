@@ -11,17 +11,21 @@
             <div class="col-lg-12">
                 <ul class="nav nav-tabs user-nav-tabs">
                     <li class="nav-item">
-                        <a href="{{ route('user.allCustomfield') }}"
-                            class="nav-link {{ menuActive('user.allCustomfield*') }}">@lang('Custom Field')</a>
+                        @php
+                        $url = $api ? route('iframe.api.allCustomfield', ['api' => $api, 'token' => $token]) : route('user.allCustomfield');
+                        @endphp
+                        <a href="{{ $url }}" class="nav-link {{ menuActive('user.allCustomfield*') }}">@lang('Custom Field')</a>
                     </li>
                     <li class="nav-item">
-                        <a href="{{ route('user.emailtemplate') }}"
-                            class="nav-link {{ menuActive('user.emailtemplate*') }}">@lang('Email Template')
+                        @php
+                        $url = $api ? route('iframe.api.emailtemplate', ['api' => $api, 'token' => $token]) : route('user.allCustomfield');
+                        @endphp
+                        <a href="{{ route('user.emailtemplate') }}" class="nav-link {{ menuActive('user.emailtemplate*') }}">@lang('Email Template')
                         </a>
                     </li>
                     {{-- <li class="nav-item">
                         <a href="{{ route('user.customcss') }}"
-                            class="nav-link {{ menuActive('user.customcss*') }}">@lang('CustomCss')</a>
+                    class="nav-link {{ menuActive('user.customcss*') }}">@lang('CustomCss')</a>
                     </li> --}}
 
                 </ul>

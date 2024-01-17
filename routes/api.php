@@ -90,6 +90,7 @@ Route::middleware('jwt.verify')->group(function () {
         Route::get('track-sell', 'UserController@trackSell')->name('track.sell');
         Route::post('track-sell-search', 'UserController@trackSellSearch')->name('track.sell.search');
         Route::get('customfield/all', 'UserController@allCustomfield')->name('allCustomfield');
+        Route::get('emailtemplate/all', 'UserController@allEmailTemplate')->name('emailtemplate');
 
         // subscription
         Route::get('plans', 'SubscriptionController@getplans')->name('getplans');

@@ -121,7 +121,7 @@ class ProductController extends Controller
                 ->addColumn('action', function ($row) use ($request) {
                     $btn = '';
                     if ($row->status == 1 && ($row->update_status == 0 || $row->update_status == 2 || $row->update_status == 3)) {
-                        $url = ($request->api == true) ? route('iframe.api.product.edit', Crypt::encrypt($row->id)).'?token='.$request->token : route('user.product.edit', Crypt::encrypt($row->id));
+                        $url = ($request->api == true) ? route('iframe.api.product.edit', Crypt::encrypt($row->id)) . '?token=' . $request->token : route('user.product.edit', Crypt::encrypt($row->id));
 
                         $btn = '<a href="' . $url . '"class="icon-btn bg--primary"><i class="las la-edit" data-bs-toggle="tooltip"
                                                     data-bs-placement="top" title="Update"></i></a>
@@ -203,6 +203,7 @@ class ProductController extends Controller
 
     public function storeProduct(Request $request)
     {
+
         $validation_rule = [
             'category_id' => 'required|exists:categories,id',
             'sub_category_id' => 'required|exists:sub_categories,id',
@@ -221,39 +222,39 @@ class ProductController extends Controller
             'tag.*' => 'required|max:255',
         ];
 
-        
+
         $category = Category::where('status', 1)->findOrFail($request->category_id);
         $originalcategory = Category::where('name', 'like', "others")->first();
-        
+
         $subcategory = SubCategory::where('status', 1)->findOrFail($request->sub_category_id);
         $subcategoryId = SubCategory::where('category_id', $request->category_id)->where('status', 1)->pluck('id')->toArray();
-        
+
         if (!in_array($subcategory->id, $subcategoryId)) {
             info("Not found in " . json_encode($subcategoryId));
             $notify[] = ['error', 'Something goes wrong'];
             return back()->withNotify($notify);
         }
-        
+
         $categoryDetails        = $category->categoryDetails;
         $categoryDetailsInput   = $request['c_details'] ?? [];
 
         $minPrice = $category->buyer_fee + (($category->buyer_fee * auth()->user()->levell->product_charge) / 100);
-        
+
         $extended_price = $request->extended_price ?? $request->regular_price;
-        
+
         if (($request->regular_price < $minPrice) || ($extended_price < $minPrice)) {
             info('Minimum price is ' . $minPrice);
             $notify[] = ['error', 'Minimum price is ' . $minPrice];
             return back()->withNotify($notify);
         }
-        
+
         // dd($request->all());
         if (count($categoryDetailsInput) != count($categoryDetails)) {
             info('Minimum price is ' . $minPrice);
             $notify[] = ['error', 'Something goes wrong.'];
             return back()->withNotify($notify);
         }
-        
+
         foreach ($categoryDetails->pluck('name') as $item) {
             info('c_details.' . str_replace(' ', '_', strtolower($item)));
             $validation_rule['c_details.' . str_replace(' ', '_', strtolower($item))] = 'required';
@@ -262,7 +263,7 @@ class ProductController extends Controller
             'tag.*.required' => 'Add at least one tag',
             'tag.*.max' => 'Total options should not be more than 191 characters'
         ]);
-        
+
 
         $pImage = '';
         if ($request->hasFile('image')) {
@@ -340,6 +341,8 @@ class ProductController extends Controller
         $product->name              = $request->name;
         $product->server            = $server ?? 0;
         $product->image             = $pImage;
+        // $product->shareable_link             = $request->shearablelink ?? null;
+        // $product->white_label_domain = $request->whitelabledomain ? $this->generateCustomShareableLink($$request->whitelabledomain, $$request->shearablelink):  null;
         if (empty($pFile) && is_null($request->sourcelink)) {
             $product->file = null;
         } elseif (empty($pFile) && !is_null($request->sourcelink)) {
@@ -422,7 +425,7 @@ class ProductController extends Controller
     public function editProduct(Request $request, $id)
     {
         $page_title = 'Edit Product';
-        
+
         $user = auth()->user();
 
         $product = Product::where('id', Crypt::decrypt($id))->where('user_id', $user->id)->with(['category', 'subcategory', 'bumps', 'othercategoriesproduct', 'productcustomfields'])->first();

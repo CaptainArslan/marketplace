@@ -222,6 +222,10 @@
                                         <label>@lang('Shareable link /Download Link ') <sup class="text--danger">*</sup></label>
                                         <input type="url" name="shearablelink" placeholder="@lang('Enter the shareable or download link of your product')" class="form--control">
                                     </div>
+                                    <div class="col-lg-12 form-group">
+                                        <label>@lang('White Label domain')</label>
+                                        <input type="text" name="whitelabledomain" placeholder="@lang('Enter white label domain')" class="form--control">
+                                    </div>
                                     <div class="row addedField">
                                         <div class="d-flex justify-content-end">
                                             <button type="button" class="btn--base w-auto px-2 py-0 d-inline-block rounded fs-6 mb-2" id="upload-ss"><i class="fas fa-plus-square"></i>
