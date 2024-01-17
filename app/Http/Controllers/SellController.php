@@ -43,7 +43,7 @@ class SellController extends Controller
 
         try {
             if ($request->has('order_number')) {
-                $order = Order::where('order_number', $request->order_number)->where('product_id', $request->product_id)->first();
+                $order = Order::where('order_number', $request->order_number)->where('product_id', Crypt::decrypt($request->product_id))->first();
                 if ($order) {
                     Log::info('Order Number: ' . $request->order_number . ' Product ID: ' . $request->product_id . ' Already Exists in Cart and deleted');
                     $order->bumpresponses()->delete();
@@ -152,20 +152,21 @@ class SellController extends Controller
                 } else {
                     $pages = json_decode($request->pages, true);
                 }
-
-                foreach ($bumpids as $key => $value) {
-                    $bump = ProductBump::findorFail($key);
-                    $newbump = new BumpResponse;
-                    $newbump->order_id = $order->id;
-                    $newbump->bump_id = $bump->id;
-                    $newbump->pages = $pages[$key];
-                    $newbump->sell_id = null;
-                    if ($newbump->pages > 0) {
-                        $newbump->price = $newbump->pages * $value;
-                    } else {
-                        $newbump->price = $value;
+                if(is_array($bumpids) && !is_null($bumpids)){
+                    foreach ($bumpids as $key => $value) {
+                        $bump = ProductBump::findorFail($key);
+                        $newbump = new BumpResponse;
+                        $newbump->order_id = $order->id;
+                        $newbump->bump_id = $bump->id;
+                        $newbump->pages = $pages[$key];
+                        $newbump->sell_id = null;
+                        if ($newbump->pages > 0) {
+                            $newbump->price = $newbump->pages * $value;
+                        } else {
+                            $newbump->price = $value;
+                        }
+                        $newbump->save();
                     }
-                    $newbump->save();
                 }
             }
 
@@ -547,12 +548,13 @@ class SellController extends Controller
                         // ->with('method')
                         ->orderBy('method_code')
                         ->get();
-
+                    
                     foreach ($gatewayCurrency as $gate) {
                         $parameter = json_decode($gate->gateway_parameter, true);
                         $publishable_keys[$gate->gateway_alias] = $parameter['publishable_key'] ?? null;
                     }
-
+                    //hard coded needs to be changed at runtime
+                    // $publishable_keys[]="pk_test_51LeviEEKjRrlgJDgpkEqpLqbqC9O9ql3rYXxyXyOKHv4ciXiM5mIDRC27BynBVfmqDtKdFoYDrsFjOfoxIZlLMDM00NC1XWz6g";
                     $subid = $request->subid ?? 0;
 
                     $payment = $this->paymentInsert($request, $subid, $totalPrice, $user);
