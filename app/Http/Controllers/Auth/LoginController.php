@@ -13,7 +13,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
-
+use Illuminate\Support\Facades\Hash;
 
 class LoginController extends Controller
 {
@@ -58,10 +58,7 @@ class LoginController extends Controller
     public function login(Request $request)
     {
         if ($request->is('api/*')) {
-            $validator = Validator::make($request->all(), [
-                'email' => 'required|string',
-                'password' => 'required|string',
-            ]);
+            $validator = $this->validateApiLogin($request);
             if ($validator->fails()) {
                 return $this->respondWithError($validator->errors()->first());
             }
@@ -70,44 +67,54 @@ class LoginController extends Controller
         }
 
         if (isset($request->captcha) && !captchaVerify($request->captcha, $request->captcha_secret)) {
-             return $request->is('api/*')
+            return $request->is('api/*')
                 ? $this->respondWithError("Invalid Captcha")
                 : back()->withNotify(['error', "Invalid Captcha"])->withInput();
         }
-        
+
         if ($this->hasTooManyLoginAttempts($request)) {
+            if($request->is('api/*')){
+                return $this->respondWithError('Too Many Login Attempts.');
+            }
             $this->fireLockoutEvent($request);
 
             return $this->sendLockoutResponse($request);
         }
-        
+
         $this->incrementLoginAttempts($request);
-        
+
         if ($request->is('api/*')) {
-            if (!User::where('email', $request->email)->exists()) {
+            $user = User::where('email', $request->email)->orWhere('username', $request->email)->first();
+
+            if (!$user) {
                 return $this->respondWithError("User Not registered!");
             }
-            
-            if (!$token = auth('user')->attempt($request->only('email', 'password'))) {
-                return $this->respondWithError('Invalid Credentials');
+
+            if(!Hash::check($request->password, $user->password)){
+                return $this->respondWithError("Invalid Credentials");
             }
-            
+
+            // if (!$token = auth('user')->attempt($request->only('email', 'password')) || $token = auth('user')->attempt(['username' => $request->email, 'password' => $request->password])) {
+            //     return $this->respondWithError('Invalid Credentials');
+            // }
+
+            $token = auth('user')->login($user);
             $user = auth('user')->user();
             Auth::loginUsingId($user->id);
-            if($request->has('order_number')){
-                Log::info('Order id -> ' . $request->order_number. ' has been updated to -> '. $user->id);
+            if ($request->has('order_number')) {
+                Log::info('Order id -> ' . $request->order_number . ' has been updated to -> ' . $user->id);
                 $order = Order::where('order_number', $request->order_number)->get();
-                if($order->count() > 0){
-                    foreach($order as $o){
+                if ($order->count() > 0) {
+                    foreach ($order as $o) {
                         $o->order_number = $user->id;
                         $o->save();
                     }
-                }else{
+                } else {
                     Log::info('Invalid Order Number!');
                     // return $this->respondWithError('Invalid Order Number!');
                 }
             }
-            
+
             return response()->json([
                 'success' => true,
                 'access_token' => $token,
@@ -117,20 +124,18 @@ class LoginController extends Controller
             if ($this->attemptLogin($request)) {
                 return $this->sendLoginResponse($request);
             }
-            
+
             // $this->incrementLoginAttempts($request);
             return $this->sendFailedLoginResponse($request);
         }
     }
-    
+
     protected function validateApiLogin(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        return Validator::make($request->all(), [
             'email' => 'required|string',
             'password' => 'required|string',
         ]);
-
-        return $validator;
     }
 
     public function username()
@@ -156,24 +161,16 @@ class LoginController extends Controller
     public function logout(Request $request)
     {
         if ($request->is('api/*')) {
-            // Get the user
-            $user = auth('user')->user();
-    
-            // Log the user out
-            auth('user')->logout();
-    
-            // Log the user in again
-            // Auth::logoutUsingId($user->id);
-    
+            // $user = auth('user')->user();
+            // Revoke the user's access token
+            auth('user')->invalidate();
             return $this->respondWithSuccess(null, 'Successfully logged out!');
+        } else {
+            $this->guard()->logout();
+            request()->session()->invalidate();
+            $notify[] = ['success', 'You have been logged out.'];
+            return redirect()->route('user.login')->withNotify($notify);
         }
-        
-        $this->guard()->logout();
-
-        request()->session()->invalidate();
-
-        $notify[] = ['success', 'You have been logged out.'];
-        return redirect()->route('user.login')->withNotify($notify);
     }
 
     public function authenticated(Request $request, $user)
@@ -221,5 +218,4 @@ class LoginController extends Controller
             return redirect()->route('user.home');
         }
     }
-    
 }

@@ -7,7 +7,6 @@ use Exception;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Session;
 use Tymon\JWTAuth\Exceptions\TokenExpiredException;
 use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 
@@ -20,39 +19,30 @@ class JwtVerifyToken
      * @param  \Closure(\Illuminate\Http\Request): (\Illuminate\Http\Response|\Illuminate\Http\RedirectResponse)  $next
      * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
+
     public function handle(Request $request, Closure $next)
     {
         $token = isset($request->token) ? $request->token : $request->header('authorization');
+
         if (empty($token)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Token not found!'
-            ], 401);
+            abort(404, 'Token not found.');
         }
 
         try {
             JWTAuth::parseToken()->authenticate();
-            // dd(auth('user')->user()->id);
-            $user = Auth::loginUsingId(auth()->user()->id);
-            // dd($user);
+            // Auth::login(auth('user')->user());
+        } catch (TokenInvalidException $e) {
+            info("Invalid token exception" . $e->getMessage());
+            return abort(401, 'Token is Invalid.');
+        } catch (TokenExpiredException $e) {
+            info("Token expiration exception" . $e->getMessage());
+            return abort(419, 'Token is Expired.');
         } catch (Exception $e) {
-            if ($e instanceof TokenInvalidException) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Token is Invalid'
-                ], 401);
-            } elseif ($e instanceof TokenExpiredException) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Token is Expired'
-                ], 401);
-            } else {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Authorization Token not found'
-                ], 401);
-            }
+            info("Invalidated Token" . $e->getMessage());
+            // Handle other exceptions as needed
+            return abort(419);
         }
+
         return $next($request);
     }
 }

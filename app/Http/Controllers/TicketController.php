@@ -183,7 +183,7 @@ class TicketController extends Controller
         return redirect()->route('ticket')->withNotify($notify);
     }
 
-    public function viewTicket($ticket)
+    public function viewTicket(Request $request, $ticket)
     {
         $page_title = "Support Tickets";
         $my_ticket = SupportTicket::where('ticket', $ticket)->latest()->first();

@@ -15,7 +15,7 @@
                             </div>
                             <div class="col-sm-2 text-end">
                                 @php
-                                    $url = $partial ? route('ticket') : route('iframe.api.ticket', ['token' => request()->token]);
+                                $url = $partial ? route('ticket') : route('iframe.api.ticket', ['token' => request()->token]);
                                 @endphp
                                 <a href="{{ $url }}" class="btn--base btn-sm">@lang('My Support Tickets')</a>
                             </div>
@@ -23,7 +23,7 @@
                     </div>
                     <div class="card-body">
                         @php
-                            $url = ($partial) ? route('ticket.store') : route('iframe.api.ticket.store', ['token' => request()->token]);
+                        $url = ($partial) ? route('ticket.store') : route('iframe.api.ticket.store', ['token' => request()->token]);
                         @endphp
                         <form action="{{ $url }}" method="post" enctype="multipart/form-data" onsubmit="return submitUserForm();">
                             @csrf
@@ -110,9 +110,10 @@
     }
 
     function formReset() {
-        window.location.href = "{{ url()->current() }}"
+        // window.location.href = "{{ url()->current() }}"
+        window.location.href = "javascript:window.history.back();"
     }
-    
+
     $('body').on('click', '.cancel-attachment', function(e) {
         $(this).closest('.row').remove();
     })

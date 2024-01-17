@@ -68,8 +68,9 @@ Route::middleware('jwt.verify')->group(function () {
         Route::get('deposit/history', 'UserController@depositHistory')->name('deposit.history');
         Route::get('transaction', 'UserController@transaction')->name('user.transaction');
         Route::get('purchased-product/list', 'UserController@purchasedProduct')->name('purchased.product');
-        Route::get('ticket', 'TicketController@supportTicket')->name('ticket');
         Route::get('meetings/all', 'MeetingController@allMeeting')->name('meeting.all');
+        
+        Route::get('ticket', 'TicketController@supportTicket')->name('ticket');
         Route::get('/new/ticket/{id?}', 'TicketController@openSupportTicket')->name('ticket.open');
         Route::post('/create', 'TicketController@storeSupportTicket')->name('ticket.store');
         Route::get('/view/{ticket}', 'TicketController@viewTicket')->name('ticket.show');
