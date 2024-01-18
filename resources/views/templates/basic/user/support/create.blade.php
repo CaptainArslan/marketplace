@@ -66,7 +66,7 @@
                         <div class="row">
                             <div class="col-md-10 col-9">
                                 <label for="supportTicketFile" class="form-label">@lang('Select one file or multiple files')</label>
-                                <input class="form-control custom--file-upload" type="file" name="attachments[]" multiple>
+                                <input class="form-control custom--file-upload" type="file" accept=".jpg, .jpeg, .png, .pdf" name="attachments[]" multiple>
                                 <div class="form-text text--muted">@lang('Allowed File Extensions: .jpg, .jpeg, .png, .pdf')</div>
                             </div>
                             <div class="col-md-2 col-3 text-end mt-2">
@@ -100,7 +100,7 @@
         $("#fileUploadsContainer").append(`
                 <div class="row">
                     <div class="col-md-10 col-9">
-                        <input class="form-control custom--file-upload mt-3" type="file" name="attachments[]" multiple>
+                        <input class="form-control custom--file-upload mt-3" type="file" accept=".jpg, .jpeg, .png, .pdf" name="attachments[]" multiple>
                     </div>
                     <div class="col-md-2 col-3 text-end mt-3">
                         <button type="button" class="text-center w-100 py-2 bt-sm btn-sm btn--base bg--danger cancel-attachment"><i class="las la-times"></i></button>

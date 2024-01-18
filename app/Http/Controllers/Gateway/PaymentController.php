@@ -24,6 +24,8 @@ use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
 {
+    public $activeTemplate;
+
     public function __construct()
     {
         return $this->activeTemplate = activeTemplate();
