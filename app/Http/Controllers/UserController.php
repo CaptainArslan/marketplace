@@ -78,7 +78,9 @@ class UserController extends Controller
     {
 
         $data['page_title'] = "Profile Setting";
-        $data['user'] = auth()->user() ?? auth('user')->user();
+        $user = auth()->user() ?? auth('user')->user();
+        $user->makeVisible(['address']);
+        $data['user'] = $user;
         $data['user']->base_url = url('/assets/images/user/profile/');
         if ($request->is('api/*')) {
             return $this->respondWithSuccess($data['user'], 'User Profile');

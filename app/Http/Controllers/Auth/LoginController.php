@@ -100,6 +100,7 @@ class LoginController extends Controller
 
             $token = auth('user')->login($user);
             $user = auth('user')->user();
+            $user->makeVisible(['address']);
             Auth::loginUsingId($user->id);
             if ($request->has('order_number')) {
                 Log::info('Order id -> ' . $request->order_number . ' has been updated to -> ' . $user->id);
