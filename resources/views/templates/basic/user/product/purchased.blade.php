@@ -54,7 +54,7 @@ $nid = null;
 
 <script>
     function showRating(param) {
-        var id  = $(param).data('id');
+        var id = $(param).data('id');
         var modal = $(`#reviewModal${id}`);
         modal.find(`input[class="product_id${id}"]`).val(id);
         var $s2input = $(`input[class="rating${id}"]`);
@@ -73,6 +73,25 @@ $nid = null;
     'use strict';
 
     $(document).ready(function() {
+
+
+        $('body').on('click', '.download-link', function() {
+            var link = $(this).data('link');
+            var tempInput = document.createElement('input');
+            tempInput.value = link;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            Swal.fire({
+                title: "Copied",
+                text: "The link has been copied to the clipboard.",
+                icon: "success",
+                timer: 2000,
+                showConfirmButton: false
+            });
+        });
 
         var nid = @json($nid);
         var api = @json($api);
@@ -162,6 +181,7 @@ $nid = null;
                         )
                     });
                 }
+
                 // $(`.reviewBtn${data.id}`).on('click', function() {
                 //     console.log(data.id);
                 //     var modal = $(`#reviewModal${data.id}`);

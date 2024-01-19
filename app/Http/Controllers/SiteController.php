@@ -549,7 +549,7 @@ class SiteController extends Controller
         return $tags;
     }
 
-    public function productDetails($slug, $id, $fetch = null, $ordernumber = null)
+    public function productDetails(Request $request, $slug, $id, $fetch = null, $ordernumber = null)
     {
         $page_title = 'Product Details';
         $product = Product::where('status', 1)->with(['category', 'user', 'ratings', 'bumps', 'productcustomfields'])->findOrFail($id);
@@ -590,6 +590,11 @@ class SiteController extends Controller
         if (!is_null($fetch) && $fetch == 'fetch') {
             return response()->json($apidata);
         }
+        
+        if (($request->is('api/*') || $request->is('iframe/*')) && $request->token) {
+            $partial = false;
+        }
+
         return view($this->activeTemplate . 'productDetails', get_defined_vars());
     }
 

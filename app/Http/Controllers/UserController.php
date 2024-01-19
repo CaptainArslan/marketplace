@@ -572,12 +572,19 @@ class UserController extends Controller
         } else {
             $products = Sell::where('id', $request->nid)->where('user_id', $user->id)->with('product', 'productcustomfields', 'customfieldresponse', 'bumpresponses');
         }
+
         if ($request->ajax()) {
-            if ($request->nid == '') {
-                $data = Sell::where('user_id', $user->id)->with('product', 'productcustomfields', 'customfieldresponse', 'bumpresponses');
-            } else {
-                $data = Sell::where('id', $request->nid)->where('user_id', $user->id)->with('product', 'productcustomfields', 'customfieldresponse', 'bumpresponses');
-            }
+            // if ($request->nid == '') {
+            //     $data = Sell::where('user_id', $user->id)->with('product', 'productcustomfields', 'customfieldresponse', 'bumpresponses');
+            // } else {
+            //     $data = Sell::where('id', $request->nid)->where('user_id', $user->id)->with('product', 'productcustomfields', 'customfieldresponse', 'bumpresponses');
+            // }
+            $data = ($request->nid == '')
+                ? Sell::where('user_id', $user->id)->with('product', 'productcustomfields', 'customfieldresponse', 'bumpresponses')
+            : Sell::where('id', $request->nid)->where('user_id', $user->id)->with('product', 'productcustomfields', 'customfieldresponse', 'bumpresponses');
+            $data = $data->get();
+            // Make 'shareable_link' visible for both cases
+            $data->makeVisible('shareable_link');
 
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -641,6 +648,7 @@ class UserController extends Controller
                 })
 
                 ->addColumn('action', function ($row) use ($api, $token) {
+                    // dd($row->toArray());
                     if ($row->status == 1) {
                         $url =   route('user.download', Crypt::encrypt($row->product->id));
                         $invoiceUrl =  route('user.invoice', Crypt::encrypt($row->product->id));
@@ -653,7 +661,7 @@ class UserController extends Controller
                                                         class="icon-btn bg--primary download-file"><i
                                                             class="las la-download" data-bs-toggle="tooltip"
                                                             data-bs-placement="top" title="Download"></i></a>
-                                                    <a href="' . $invoiceUrl . '"
+                        <a href="' . $invoiceUrl . '"
                                                         class="icon-btn bg--primary"><i class="las la-receipt"
                                                             data-bs-toggle="tooltip" data-bs-placement="top"
                                                             title="Invoice"></i></a>';
@@ -664,14 +672,14 @@ class UserController extends Controller
                                                                 class="las la-star-of-david" data-bs-toggle="tooltip"
                                                                 data-bs-placement="top" title="Give Review"></i></a>';
                         }
-                        if ($row->productcustomfields->count() > 0) {
-                            $statusdata .= ' <a href="javascript:void(0)" data-bs-toggle="modal"
-                                                            data-bs-target="#addcustomfieldmodal' . $row->id . '"
-                                                            class="icon-btn bg--primary"><i
-                                                                class="editfieldresponse' . $row->id . ' las la-edit"
-                                                                data-bs-toggle="tooltip" data-bs-placement="top"
-                                                                title="Please Fill the CustomField"></i></a>';
-                        }
+                        // if ($row->productcustomfields->count() > 0) {
+                        //     $statusdata .= ' <a href="javascript:void(0)" data-bs-toggle="modal"
+                        //                                     data-bs-target="#addcustomfieldmodal' . $row->id . '"
+                        //                                     class="icon-btn bg--primary"><i
+                        //                                         class="editfieldresponse' . $row->id . ' las la-edit"
+                        //                                         data-bs-toggle="tooltip" data-bs-placement="top"
+                        //                                         title="Please Fill the CustomField"></i></a>';
+                        // }
                     } elseif ($row->status == 2) {
                         $statusdata = ' <a href="javascript:void(0)" data-bs-toggle="modal"
                                                         data-bs-target="#messageModal' . $row->id . '"
@@ -680,10 +688,9 @@ class UserController extends Controller
                                                             title="Message"></i></a>';
                     }
                     if (!is_null($row->product->shareable_link)) {
-
-                        $statusdata  .= ' <a href="' . route('user.copyslink', Crypt::encrypt($row->product->id)) . '"
-                                                        class="icon-btn bg--primary download-file"><i
-                                                            class="las la-copy" data-bs-toggle="tooltip"
+                        $statusdata  .= ' <a href="javascript:void(0)" data-link="' . $row->product->shareable_link . '"
+                                                        class="icon-btn bg--primary download-link"><i
+                                                            class="las la-copy " data-bs-toggle="tooltip"
                                                             data-bs-placement="top" title="CopyLink"></i></a>';
                     }
                     return $statusdata;
@@ -747,6 +754,7 @@ class UserController extends Controller
         $notify[] = ['success', 'Thanks for your review'];
         return back()->withNotify($notify);
     }
+
     public function copyShareableLink($id)
     {
         $product = Product::findOrFail(Crypt::decrypt($id));
@@ -758,6 +766,7 @@ class UserController extends Controller
         }
 
         $file = $product->shareable_link;
+        dd($file);
         if (!is_null($file)) {
             session()->put('copytext', $file);
             $notify[] = ['success', 'Shareable link of the Product is successfully Copied'];
@@ -779,6 +788,7 @@ class UserController extends Controller
         }
 
         $file = $product->file;
+       
 
         if (is_null($file)) {
             $notify[] = ['error', 'Author Did not Provide the File yet'];

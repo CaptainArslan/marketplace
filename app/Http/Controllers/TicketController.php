@@ -42,11 +42,22 @@ class TicketController extends Controller
             $data = SupportTicket::where('user_id', $user->id)->orwhere('seller_id', $user->id)->with('product', 'seller')->latest();
             return DataTables::of($data)
                 ->addIndexColumn()
-                ->editColumn('subject', function ($row) {
-                    $btn = '<a href="' . route('ticket.view', $row->ticket) . '" class="text--base">
+                ->editColumn('subject', function ($row) use ($request) {
+
+                    $url  = route('ticket.view', $row->ticket);
+                    if ($request->api && $request->token) {
+                        $url = route('iframe.api.ticket.show', $row->ticket . "?token=" . $request->token);
+                    }
+
+                    $btn = '<a href="' . $url . '" class="text--base">
                                                     [Ticket ' . $row->ticket . ']';
                     if (!is_null($row->product_id)) {
-                        $btn .= '<a href="' . route('product.details', [str_slug(__($row->product->name)), $row->product_id]) . '">[' . $row->product->name . ']</a>';
+                        $url  = route('product.details', [str_slug(__($row->product->name)), $row->product_id]);
+                        $url1  = $url;
+                        if ($request->api && $request->token) {
+                            $url = "/product/" . implode('/', [$row->product->category_id, str_slug($row->product->name),  $row->product_id]);
+                        }
+                        $btn .= '<a href="javascript:void(0)" data-href1="' . $url1 . '" data-href="' . $url . '" class="open-link">[' . $row->product->name . ']</a>';
                     }
                     $btn .= '__' . $row->subject;
                     return $btn;
@@ -100,7 +111,7 @@ class TicketController extends Controller
         }
         $sellers = User::where('seller', 1)->where('status', 1)->get();
 
-        if($request->is('api/*')){
+        if ($request->is('api/*')) {
             $partial = false;
         }
 
@@ -177,7 +188,7 @@ class TicketController extends Controller
             }
         }
         $notify[] = ['success', 'ticket created successfully!'];
-        if($request->is('api/*')){
+        if ($request->is('api/*')) {
             return  to_route('iframe.api.ticket', ['token' => $request->token])->withNotify($notify);
         }
         return redirect()->route('ticket')->withNotify($notify);
@@ -192,7 +203,7 @@ class TicketController extends Controller
         if ($my_ticket->seller_id != 0) {
             $seller = User::where('id', $my_ticket->seller_id)->first();
         }
-        if($request->is('api/*')){
+        if ($request->is('api/*')) {
             $partial = false;
         }
         return view($this->activeTemplate . 'user.support.view', get_defined_vars());

@@ -44,7 +44,18 @@
     $(document).ready(function() {
         "use strict";
 
-        
+        $('body').on('click', '.open-link', function() {
+            var link1 = $(this).data('href1');
+            var link = $(this).data('href');
+            
+            if (window.top != window.self) {
+                window.top = link;
+            } else {
+                location.href = link1;
+            }
+        });
+
+
         var api = @json($api);
         var token = @json($token);
 

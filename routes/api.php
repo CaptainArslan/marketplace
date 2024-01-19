@@ -69,16 +69,19 @@ Route::middleware('jwt.verify')->group(function () {
         Route::get('transaction', 'UserController@transaction')->name('user.transaction');
         Route::get('purchased-product/list', 'UserController@purchasedProduct')->name('purchased.product');
         Route::get('meetings/all', 'MeetingController@allMeeting')->name('meeting.all');
+
         
         Route::get('ticket', 'TicketController@supportTicket')->name('ticket');
+        // Route::get('tickets/view/{id}', 'SupportTicketController@ticketReply')->name('ticket.view');
         Route::get('/new/ticket/{id?}', 'TicketController@openSupportTicket')->name('ticket.open');
         Route::post('ticket/store', 'TicketController@storeSupportTicket')->name('ticket.store');
         Route::get('/view/{ticket}', 'TicketController@viewTicket')->name('ticket.show');
         Route::post('/reply/{ticket}', 'TicketController@replyTicket')->name('ticket.reply');
         Route::post('rating', 'UserController@rating')->name('rating');
-
+        
         //Product
         Route::get('product/all', 'ProductController@allProduct')->name('product.all');
+        Route::get('product-details/{slug}/{id}', 'SiteController@productDetails')->name('product.details');
         Route::get('product/new', 'ProductController@newProduct')->name('product.new');
         Route::post('product/store', 'ProductController@storeProduct')->name('product.store');
         Route::get('product/edit/{id}', 'ProductController@editProduct')->name('product.edit');
