@@ -167,7 +167,7 @@ class ManageUsersController extends Controller
         $user->ts = $request->ts ? 1 : 0;
         $user->tv = $request->tv ? 1 : 0;
         $user->seller = $request->seller ? 1 : 0;
-        // $user->is_approve = $request->is_approve ? 1 : 0;
+        $user->is_approve = $request->is_approve ? 1 : 0;
         // $user->is_seller = $request->is_seller ? 1 : 0;
         // $user->top_author = $request->top_author ? 1 : 0;
         $user->save();

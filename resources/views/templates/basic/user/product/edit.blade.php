@@ -109,7 +109,7 @@
                                                                     <label>@lang('Price For Bump')</label>
                                                                     <div class="input-group mb-2 mr-sm-2">
                                                                         <input type="number"
-                                                                            class="form--control buyer-fee varient_price"
+                                                                            class="form--control  varient_price"
                                                                             name="varient_price[]"
                                                                             value='{{ $bump->price }}'
                                                                             placeholder="Enter Pump Price">
@@ -142,7 +142,7 @@
                                                                             class="text--danger">*</sup></label>
                                                                     <div class="input-group mb-2 mr-sm-2">
                                                                         <input type="number"
-                                                                            class="form--control regular-price"
+                                                                            class="form--control"
                                                                             name="min_quantity[]"
                                                                             value={{ $bump->min_quantity }}
                                                                             placeholder="@lang('Enter Quantity')"
@@ -175,7 +175,7 @@
                                                             value="{{ getAmount($product->category->buyer_fee) }}"
                                                             readonly>
                                                         <div class="input-group-append">
-                                                            <div class="input-group-text h-100">%</div>
+                                                            <div class="input-group-text h-100">{{ $general->cur_text }}</div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -213,7 +213,7 @@
                                                             value="{{ getAmount($product->category->buyer_fee) }}"
                                                             readonly>
                                                         <div class="input-group-append">
-                                                            <div class="input-group-text h-100">%</div>
+                                                            <div class="input-group-text h-100">{{ $general->cur_text }}</div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -505,7 +505,7 @@
                                         <div class="col-lg-8 form-group">
                                             <label>@lang('Price For Bump')</label>
                                             <div class="input-group mb-2 mr-sm-2">
-                                                <input type="number" class="form--control buyer-fee varient_price" name="varient_price[]" placeholder="Enter Pump Price" >
+                                                <input type="number" class="form--control  varient_price" name="varient_price[]" placeholder="Enter Pump Price" >
                                              <div class="input-group-append">
                                                     <div class="input-group-text h-100">{{ $general->cur_text }}</div>
                                                 </div>
@@ -521,7 +521,7 @@
                                         <div class="col-lg-12 form-group min_quantity d-none">
                                             <label>@lang('Min Quantity') <sup class="text--danger">*</sup></label>
                                             <div class="input-group mb-2 mr-sm-2">
-                                                <input type="number" class="form--control regular-price"
+                                                <input type="number" class="form--control"
                                                     name="min_quantity[]" value="0" placeholder="@lang('Enter Quantity')" step="any">
                                             </div>
                                         </div>
@@ -566,32 +566,82 @@
 
 
         });
-
-        $('.regular-price').on('focusout', function() {
-            var value = $('.regular-price').val();
-            var buyerFee = $('.buyer-fee').val();
-            var authorFee = "{{ auth()->user()->levell->product_charge }}";
-
-            var minPrice = parseFloat(buyerFee) + parseFloat((parseFloat(buyerFee) * parseInt(authorFee)) / 100);
-
-            if (parseFloat(value) < parseFloat(minPrice)) {
-                alert('Minimum price' + minPrice);
-                $('.regular-price').val('');
-                $('.final-regular-price').val(0);
+        function calcPrice(type='regular', event){
+            let value = $(`.${type}-price`).val();
+           
+            let buyerFee = $('.buyer-fee').val();
+            let authorFee = "{{ auth()->user()->levell->product_charge }}";
+            let finalValue = parseFloat(value) + parseInt(buyerFee);
+             console.log(type,value,finalValue,buyerFee,authorFee);
+            let minPrice = parseFloat(buyerFee) + parseFloat((parseFloat(buyerFee) * parseInt(authorFee)) / 100);
+            if (parseFloat(value) < parseFloat(minPrice) && event.handleObj.type === "focusout") {
+                $(`.${type}-price`).val('');
+                $(`.final-${type}-price`).val(0);
+                alert('Minimum price ' + minPrice);
+            }else if (isNaN(finalValue)){
+                $(`.final-${type}-price`).val(0);
+            }else{
+                $(`.final-${type}-price`).val(parseFloat(finalValue));
             }
+        }
 
-            if (parseFloat(value) >= parseFloat(minPrice)) {
+        $('.regular-price').on('focusout input', function(e) {
+            calcPrice( 'regular',e)
+        })
 
-                var finalValue = parseFloat(value) + parseInt(buyerFee);
-                if (isNaN(finalValue)) {
-                    $('.final-regular-price').val(0);
-                }
-                if (finalValue) {
-                    $('.final-regular-price').val(parseFloat(finalValue));
-                }
-            }
+        $('.extended-price').on('focusout input', function(e) {
+            calcPrice("extended",e);
+        })
 
-        });
+        // $('.regular-price').on('focusout', function() {
+        //     var value = $('.regular-price').val();
+        //     var buyerFee = $('.buyer-fee').val();
+        //     var authorFee = "{{ auth()->user()->levell->product_charge }}";
+
+        //     var minPrice = parseFloat(buyerFee) + parseFloat((parseFloat(buyerFee) * parseInt(authorFee)) / 100);
+
+        //     if (parseFloat(value) < parseFloat(minPrice)) {
+        //         alert('Minimum price' + minPrice);
+        //         $('.regular-price').val('');
+        //         $('.final-regular-price').val(0);
+        //     }
+
+        //     if (parseFloat(value) >= parseFloat(minPrice)) {
+
+        //         var finalValue = parseFloat(value) + parseInt(buyerFee);
+        //         if (isNaN(finalValue)) {
+        //             $('.final-regular-price').val(0);
+        //         }
+        //         if (finalValue) {
+        //             $('.final-regular-price').val(parseFloat(finalValue));
+        //         }
+        //     }
+
+        // });
+        //         $('.extended-price').on('focusout', function() {
+        //     var value = $('.extended-price').val();
+        //     var buyerFee = $('.buyer-fee').val();
+        //     var authorFee = "{{ auth()->user()->levell->product_charge }}";
+
+        //     var minPrice = parseFloat(buyerFee) + parseFloat((parseFloat(buyerFee) * parseInt(authorFee)) / 100);
+
+        //     if (parseFloat(value) < parseFloat(minPrice)) {
+        //         alert('Minimum price' + minPrice);
+        //         $('.extended-price').val('');
+        //         $('.final-extended-price').val(0);
+        //     }
+
+        //     if (parseFloat(value) >= parseFloat(minPrice)) {
+
+        //         var finalValue = parseFloat(value) + parseInt(buyerFee);
+        //         if (isNaN(finalValue)) {
+        //             $('.final-extended-price').val(0);
+        //         }
+        //         if (finalValue) {
+        //             $('.final-extended-price').val(parseFloat(finalValue));
+        //         }
+        //     }
+        // });
         //Upload Options
         var choice = @json($product->file);
         if (choice == null) {
@@ -644,30 +694,7 @@
                 $('input[name="field_name[]"]').required = false;
             }
         });
-        $('.extended-price').on('focusout', function() {
-            var value = $('.extended-price').val();
-            var buyerFee = $('.buyer-fee').val();
-            var authorFee = "{{ auth()->user()->levell->product_charge }}";
 
-            var minPrice = parseFloat(buyerFee) + parseFloat((parseFloat(buyerFee) * parseInt(authorFee)) / 100);
-
-            if (parseFloat(value) < parseFloat(minPrice)) {
-                alert('Minimum price' + minPrice);
-                $('.extended-price').val('');
-                $('.final-extended-price').val(0);
-            }
-
-            if (parseFloat(value) >= parseFloat(minPrice)) {
-
-                var finalValue = parseFloat(value) + parseInt(buyerFee);
-                if (isNaN(finalValue)) {
-                    $('.final-extended-price').val(0);
-                }
-                if (finalValue) {
-                    $('.final-extended-price').val(parseFloat(finalValue));
-                }
-            }
-        });
 
         bkLib.onDomLoaded(function() {
             $(".nicEdit").each(function(index) {

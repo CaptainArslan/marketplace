@@ -410,7 +410,7 @@
                                         <div class="col-lg-2 form-group min_quantity_${id} d-none">
                                             <label>@lang('Min Quantity') <sup class="text--danger">*</sup></label>
                                             <div class="input-group mb-2 mr-sm-2">
-                                                <input type="number" class="form--control regular-price"
+                                                <input type="number" class="form--control"
                                                     name="min_quantity[]" value="1" placeholder="@lang('Enter Quantity')" step="any">
                                             </div>
                                         </div>
@@ -443,55 +443,81 @@
             //     $('input[name="min_quantity"]').required = false;
             // }
         });
-        $('.regular-price').on('focusout', function() {
-            var value = $('.regular-price').val();
-            var buyerFee = $('.buyer-fee').val();
-            var authorFee = "{{ auth()->user()->levell->product_charge }}";
-
-            var minPrice = parseFloat(buyerFee) + parseFloat((parseFloat(buyerFee) * parseInt(authorFee)) / 100);
-            if (parseFloat(value) < parseFloat(minPrice)) {
-                alert('Minimum price ' + minPrice);
-                $('.regular-price').val('');
-                $('.final-regular-price').val(0);
+        
+            function calcPrice(type='regular', event){
+            let value = $(`.${type}-price`).val();
+            let buyerFee = $('.buyer-fee').val();
+            let authorFee = "{{ auth()->user()->levell->product_charge }}";
+            let finalValue = parseFloat(value) + parseInt(buyerFee);
+            let minPrice = parseFloat(buyerFee) + parseFloat((parseFloat(buyerFee) * parseInt(authorFee)) / 100);
+            if (parseFloat(value) < parseFloat(minPrice) && event.handleObj.type === "focusout") {
+                $(`.${type}-price`).val('');
+                $(`.final-${type}-price`).val(0);
+                alert('Minimum price s' + minPrice);
+            }else if (isNaN(finalValue)){
+                $(`.final-${type}-price`).val(0);
+            }else{
+                $(`.final-${type}-price`).val(parseFloat(finalValue));
             }
+        }
 
-            if (parseFloat(value) >= parseFloat(minPrice)) {
+        $('.regular-price').on('focusout input', function(e) {
+            calcPrice( undefined,e)
+        })
 
-                var finalValue = parseFloat(value) + parseInt(buyerFee);
-                if (isNaN(finalValue)) {
-                    $('.final-regular-price').val(0);
-                }
-                if (finalValue) {
-                    $('.final-regular-price').val(parseFloat(finalValue));
-                }
-            }
+        $('.extended-price').on('focusout input', function(e) {
+            calcPrice("extended",e);
+        })
 
-        });
+        // $('.regular-price').on('focusout', function() {
+        //     var value = $('.regular-price').val();
+        //     var buyerFee = $('.buyer-fee').val();
+        //     var authorFee = "{{ auth()->user()->levell->product_charge }}";
 
-        $('.extended-price').on('focusout', function() {
-            var value = $('.extended-price').val();
-            var buyerFee = $('.buyer-fee').val();
-            var authorFee = "{{ auth()->user()->levell->product_charge }}";
+        //     var minPrice = parseFloat(buyerFee) + parseFloat((parseFloat(buyerFee) * parseInt(authorFee)) / 100);
+        //     if (parseFloat(value) < parseFloat(minPrice)) {
+        //         alert('Minimum price ' + minPrice);
+        //         $('.regular-price').val('');
+        //         $('.final-regular-price').val(0);
+        //     }
 
-            var minPrice = parseFloat(buyerFee) + parseFloat((parseFloat(buyerFee) * parseInt(authorFee)) / 100);
+        //     if (parseFloat(value) >= parseFloat(minPrice)) {
 
-            if (parseFloat(value) < parseFloat(minPrice)) {
-                alert('Minimum price ' + minPrice);
-                $('.extended-price').val('');
-                $('.final-extended-price').val(0);
-            }
+        //         var finalValue = parseFloat(value) + parseInt(buyerFee);
+        //         if (isNaN(finalValue)) {
+        //             $('.final-regular-price').val(0);
+        //         }
+        //         if (finalValue) {
+        //             $('.final-regular-price').val(parseFloat(finalValue));
+        //         }
+        //     }
 
-            if (parseFloat(value) >= parseFloat(minPrice)) {
+        // });
 
-                var finalValue = parseFloat(value) + parseInt(buyerFee);
-                if (isNaN(finalValue)) {
-                    $('.final-extended-price').val(0);
-                }
-                if (finalValue) {
-                    $('.final-extended-price').val(parseFloat(finalValue));
-                }
-            }
-        });
+        // $('.extended-price').on('focusout', function() {
+        //     var value = $('.extended-price').val();
+        //     var buyerFee = $('.buyer-fee').val();
+        //     var authorFee = "{{ auth()->user()->levell->product_charge }}";
+
+        //     var minPrice = parseFloat(buyerFee) + parseFloat((parseFloat(buyerFee) * parseInt(authorFee)) / 100);
+
+        //     if (parseFloat(value) < parseFloat(minPrice)) {
+        //         alert('Minimum price ' + minPrice);
+        //         $('.extended-price').val('');
+        //         $('.final-extended-price').val(0);
+        //     }
+
+        //     if (parseFloat(value) >= parseFloat(minPrice)) {
+
+        //         var finalValue = parseFloat(value) + parseInt(buyerFee);
+        //         if (isNaN(finalValue)) {
+        //             $('.final-extended-price').val(0);
+        //         }
+        //         if (finalValue) {
+        //             $('.final-extended-price').val(parseFloat(finalValue));
+        //         }
+        //     }
+        // });
 
         bkLib.onDomLoaded(function() {
             $(".nicEdit").each(function(index) {
@@ -607,37 +633,40 @@
                     100);
 
                 $('.buyer-fee').val(parseFloat(buyerFee));
+                $('.regular-price').val('')
+                $('.final-regular-price').val(0);
+                $('.extended-price').val('');
+                $('.final-extended-price').val(0);
+                // if ($('.regular-price').val() == '') {
+                //     $('.final-regular-price').val(0);
+                // } else {
+                //     if (parseFloat($('.regular-price').val()) < parseFloat(minPrice)) {
+                //         alert('Minimum price ' + minPrice);
+                //         $('.regular-price').val('');
+                //         $('.final-regular-price').val(0);
+                //     }
 
-                if ($('.regular-price').val() == '') {
-                    $('.final-regular-price').val(0);
-                } else {
-                    if (parseFloat($('.regular-price').val()) < parseFloat(minPrice)) {
-                        alert('Minimum price ' + minPrice);
-                        $('.regular-price').val('');
-                        $('.final-regular-price').val(0);
-                    }
+                //     if (parseFloat($('.regular-price').val()) >= parseFloat(minPrice)) {
+                //         $('.final-regular-price').val(parseFloat($('.regular-price').val()) + parseFloat(
+                //             buyerFee));
+                //     }
+                // }
 
-                    if (parseFloat($('.regular-price').val()) >= parseFloat(minPrice)) {
-                        $('.final-regular-price').val(parseFloat($('.regular-price').val()) + parseFloat(
-                            buyerFee));
-                    }
-                }
+                // if ($('.extended-price').val() == '') {
+                //     $('.final-extended-price').val(0);
+                // } else {
 
-                if ($('.extended-price').val() == '') {
-                    $('.final-extended-price').val(0);
-                } else {
+                //     if (parseFloat($('.extended-price').val()) < parseFloat(minPrice)) {
+                //         alert('Minimum price ' + minPrice);
+                //         $('.extended-price').val('');
+                //         $('.final-extended-price').val(0);
+                //     }
 
-                    if (parseFloat($('.extended-price').val()) < parseFloat(minPrice)) {
-                        alert('Minimum price ' + minPrice);
-                        $('.extended-price').val('');
-                        $('.final-extended-price').val(0);
-                    }
-
-                    if (parseFloat($('.extended-price').val()) >= parseFloat(minPrice)) {
-                        $('.final-extended-price').val(parseFloat($('.extended-price').val()) + parseFloat(
-                            buyerFee));
-                    }
-                }
+                //     if (parseFloat($('.extended-price').val()) >= parseFloat(minPrice)) {
+                //         $('.final-extended-price').val(parseFloat($('.extended-price').val()) + parseFloat(
+                //             buyerFee));
+                //     }
+                // }
 
                 $('#subcategory').empty();
 

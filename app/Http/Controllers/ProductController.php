@@ -417,7 +417,7 @@ class ProductController extends Controller
                 $productcf->save();
             }
         }
-
+        
         $notify[] = ['success', 'Product successfully submitted'];
         return redirect()->route('user.product.all')->withNotify($notify);
     }
