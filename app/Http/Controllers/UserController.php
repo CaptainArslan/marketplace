@@ -599,7 +599,7 @@ class UserController extends Controller
                     if ($row->support_time) {
                         $rowdata = '<b>' . $row->support_time . '</b>';
                     } else {
-                        $rowdata = '<b>NoSupport</b>';
+                        $rowdata = '<b> </b>';
                     }
                     return $rowdata;
                 })
@@ -903,7 +903,7 @@ class UserController extends Controller
                     if ($row->support_time) {
                         $rowdata = '<b>' . $row->support_time . '</b>';
                     } else {
-                        $rowdata = '<b>NoSupport</b>';
+                        $rowdata = '<b> </b>';
                     }
                     return $rowdata;
                 })
