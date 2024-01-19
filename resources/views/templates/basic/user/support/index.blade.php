@@ -48,8 +48,10 @@
             var link1 = $(this).data('href1');
             var link = $(this).data('href');
             
+            console.log(link1 + " -- " + link );
+            
             if (window.top != window.self) {
-                window.top = link;
+                window.top.location.href = link;
             } else {
                 location.href = link1;
             }

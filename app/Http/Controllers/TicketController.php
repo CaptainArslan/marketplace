@@ -55,7 +55,7 @@ class TicketController extends Controller
                         $url  = route('product.details', [str_slug(__($row->product->name)), $row->product_id]);
                         $url1  = $url;
                         if ($request->api && $request->token) {
-                            $url = "/product/" . implode('/', [$row->product->category_id, str_slug($row->product->name),  $row->product_id]);
+                            $url = env("REACT_APP_URL"). "/product/" . implode('/', [$row->product->category_id, str_slug($row->product->name),  $row->product_id, auth()->user()->id ?? '']);
                         }
                         $btn .= '<a href="javascript:void(0)" data-href1="' . $url1 . '" data-href="' . $url . '" class="open-link">[' . $row->product->name . ']</a>';
                     }
