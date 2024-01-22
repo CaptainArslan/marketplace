@@ -548,11 +548,15 @@ class SellController extends Controller
                         // ->with('method')
                         ->orderBy('method_code')
                         ->get();
+
                     
                     foreach ($gatewayCurrency as $gate) {
                         $parameter = json_decode($gate->gateway_parameter, true);
                         $publishable_keys[$gate->gateway_alias] = $parameter['publishable_key'] ?? null;
                     }
+
+                    $publishable_keys = empty($publishable_keys) ? ['stripe' => env('STRIPE_KEY')] : $publishable_keys;
+
                     //hard coded needs to be changed at runtime
                     // $publishable_keys[]="pk_test_51LeviEEKjRrlgJDgpkEqpLqbqC9O9ql3rYXxyXyOKHv4ciXiM5mIDRC27BynBVfmqDtKdFoYDrsFjOfoxIZlLMDM00NC1XWz6g";
                     $subid = $request->subid ?? 0;
@@ -562,8 +566,6 @@ class SellController extends Controller
                     $data = [
                         'order' => $payment,
                         'publishable_keys' => $publishable_keys, // Use the collected array
-                        // 'total_price' => $totalPrice,
-                        // 'gateway_currency' => $gatewayCurrency,
                     ];
 
                     return $this->respondWithSuccess($data, 'Checkout now!');

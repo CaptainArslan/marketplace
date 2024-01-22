@@ -1,21 +1,22 @@
 <?php
 
+use App\User;
+use App\Level;
+use App\GhlAuth;
+use App\Product;
 use App\Category;
 use App\CustomCss;
-use App\GeneralSetting;
-use App\GhlAuth;
-use App\Level;
-use App\Product;
 use App\SubCategory;
-use App\User;
-use Illuminate\Pagination\LengthAwarePaginator;
+use App\GeneralSetting;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Facades\Image;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use Intervention\Image\Facades\Image;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 function sidebarVariation()
 {
