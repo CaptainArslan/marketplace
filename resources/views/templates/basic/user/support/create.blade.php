@@ -4,7 +4,7 @@
 @include($activeTemplate . 'partials.dashboardHeader')
 @endif
 <section class="pt-100 pb-100">
-    <div class="container">
+    <div class="{{ $partial ? 'container' : 'container-fluid' }}">
         <div class="row justify-content-center">
             <div class="col-lg-10">
                 <div class="card custom--card">

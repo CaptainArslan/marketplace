@@ -6,10 +6,9 @@
     @endif
     <!-- dashboard area start -->
     <div class="dashboard-area pt-50">
-        <div class="container">
+        <div class="{{ $partial ? 'container' : 'container-fluid' }}">
             <div class="row">
                 <div class="col-lg-8">
-
                     <div class="row gy-4">
                         @if ($general->referral_system)
                         <div class="col-12">

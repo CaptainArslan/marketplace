@@ -5,13 +5,10 @@
     @include($activeTemplate . 'partials.dashboardHeader')
     @endif
     <div class="dashboard-area pt-50">
-        <div class="container">
+        <div class="{{ $partial ? 'container' : 'container-fluid' }}">
             <div class="row">
                 <div class="col-lg-12">
-
-
                     <div class="table-responsive--md mt-4">
-
                         <table id='data-table' class="table table-bordered data-table custom--table">
                             <thead>
                                 <tr>
@@ -24,11 +21,8 @@
                                 </tr>
                             </thead>
                             <tbody>
-
                             </tbody>
                         </table>
-
-
                     </div>
                 </div>
             </div>

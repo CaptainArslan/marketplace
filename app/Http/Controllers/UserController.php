@@ -1381,6 +1381,8 @@ class UserController extends Controller
         $page_title = 'All Email Templates';
         $empty_message = 'No data found';
         $plans = UserSubscription::where('user_id', auth()->user()->id)->with('subscriptions')->first();
+
+
         // if (is_null($plans)) {
         //     $plans = Subscription::where('id', 1)->first();
         //     if ($plans->cf_status == 0) {
@@ -1391,6 +1393,13 @@ class UserController extends Controller
         //         $warning = 1;
         //     }
         // }
+        $token = '';
+        $api = false;
+        if ($request->is('api/*')) {
+            $token = $request->token;
+            $api = true;
+            $partial = false;
+        }
         if ($request->ajax()) {
             $data = EmailTemplateSetting::where('user_id', auth()->user()->id);
             return DataTables::of($data)

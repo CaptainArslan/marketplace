@@ -554,7 +554,6 @@ class SiteController extends Controller
         $page_title = 'Product Details';
         $product = Product::where('status', 1)->with(['category', 'user', 'ratings', 'bumps', 'productcustomfields'])->findOrFail($id);
 
-        // dd($product);
         $encryptedProductId = Crypt::encrypt($product->id);
 
 

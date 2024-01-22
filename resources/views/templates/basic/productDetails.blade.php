@@ -1,7 +1,7 @@
 @extends($activeTemplate . 'layouts.frontend')
 @section('content')
     <section class="pt-50 pb-100">
-        <div class="container">
+        <div class="{{ $partial ? 'container' : 'container-fluid' }}">
             <div class="row">
                 <div class="col-lg-8">
                     <div class="product-details-top mb-4">

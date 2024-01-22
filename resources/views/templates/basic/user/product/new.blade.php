@@ -1,9 +1,11 @@
 @extends($activeTemplate . 'layouts.frontend')
 @section('content')
-@include($activeTemplate . 'partials.dashboardHeader')
+@if ($partial)
+    @include($activeTemplate . 'partials.breadcrumb')    
+@endif
 <div class="pb-100">
     <div class="dashboard-area pt-50">
-        <div class="container">
+        <div class="{{ $partial ? 'container' : 'container-fluid' }}">
             <div class="row">
                 <div class="col-lg-12">
                     <div class="tab-content-area">

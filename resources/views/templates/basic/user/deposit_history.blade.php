@@ -5,13 +5,15 @@
     @include($activeTemplate . 'partials.dashboardHeader')
     @endif
     <div class="dashboard-area pt-50">
-        <div class="container">
+        <div class="{{ $partial ? 'container' : 'container-fluid' }}">
             <div class="row">
                 <div class="col-lg-12">
                     <div class="text-end">
+                        @if ($partial)
                         <a class="btn btn-sm btn--base" href="{{ route('user.deposit') }}">
                             <i class="las la-university fs-6"></i> @lang('Deposit Now')
                         </a>
+                        @endif
                     </div>
                     <div class="table-responsive--md mt-4">
 

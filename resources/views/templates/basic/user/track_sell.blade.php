@@ -7,7 +7,7 @@
     @include($activeTemplate.'partials.dashboardHeader')
     @endif
     <div class="dashboard-area pt-50">
-        <div class="container">
+        <div class="{{ $partial ? 'container' : 'container-fluid' }}">
             <div class="row justify-content-center">
                 <div class="col-xl-7 col-lg-8">
                     <form class="hero-search-form wow fadeInUp" method="POST" action="{{ $api ? route('iframe.api.track.sell.search').'?token='.request()->token :  route('user.track.sell.search')}}">
