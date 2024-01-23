@@ -17,7 +17,7 @@
                             <table style="width:100%">
                                 <tr style="width:100%" class="heading">
                                 <td colspan="3">
-                                    <img class="invoice-logo" src="{{getImage(imagePath()['logoIcon']['path'] .'/logo.png')}}" alt="@lang('logo')" />
+                                    <img class="invoice-logo" src="{{ getImage(imagePath()['profile']['user']['path'] . '/' . auth()->user()->image, imagePath()['profile']['user']['size']) }}" alt="@lang('logo')" />
                                 </td>
                                 <td class="text-right">
                                     <div class="invoice-from" style="max-width:400px">
