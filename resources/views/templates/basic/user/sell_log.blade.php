@@ -15,8 +15,8 @@ $notifyid = '';
         <div class="{{ $partial ? 'container' : 'container-fluid' }}">
             <div class="row">
                 <div class="col-lg-12">
-                    <div class="table-responsive--md mt-4">
-                        <table id='data-table' class="table table-bordered data-table custom--table">
+                    <div class="mt-4">
+                        <table id='data-table' class="table table-bordered data-table custom--table responsive w-100 display">
                             <thead>
                                 <tr>
                                     <th>@lang('Date')</th>
@@ -68,7 +68,8 @@ $notifyid = '';
         var table = $('#data-table').DataTable({
             processing: true,
             serverSide: true,
-            ajax: api  ? decodeURIComponent("{{ route('iframe.api.sell.log', ['api' => ':api','token'=>':token']) }}").replace(/:token|:api|&amp;/gm, (m) => (val[m] ?? m)) :  "{{ route('user.sell.log') }}",
+            responsive: true,
+            ajax: api ? decodeURIComponent("{{ route('iframe.api.sell.log', ['api' => ':api','token'=>':token']) }}").replace(/:token|:api|&amp;/gm, (m) => (val[m] ?? m)) : "{{ route('user.sell.log') }}",
             columns: [{
                     data: 'created_at',
                     name: 'created_at'

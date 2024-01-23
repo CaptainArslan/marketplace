@@ -12,13 +12,13 @@
                         @php
                         $url = $partial ? route('ticket.open') : route('iframe.api.ticket.open', ['token' => request()->token]) ;
                         @endphp
-                        <a class="btn-sm btn--base" href="{{ $url }}">
+                        <a class="btn-sm btn--base" href="{{ $url }}s">
                             <i class="las la-plus-circle fs-6"></i> @lang('Create Ticket')
                         </a>
                     </div>
-                    <div class="table-responsive--md mt-4">
-
-                        <table id='data-table' class="table table-bordered data-table custom--table">
+                    <div class="mt-4">
+                        <!-- <table id='data-table' class="table table-bordered data-table custom--table"> -->
+                        <table id='data-table' class="table table-bordered data-table custom--table responsive w-100 display wrap">
                             <thead>
                                 <tr>
                                     <th>@lang('Subject')</th>
@@ -68,6 +68,7 @@
         var table = $('#data-table').DataTable({
             processing: true,
             serverSide: true,
+            responsive: true,
             ajax: decodeURIComponent("{{ route('ticket', ['api' => ':api','token'=>':token']) }}").replace(/:token|:api|&amp;/gm, (m) => (val[m] ?? m)),
             columns: [{
                     data: 'subject',

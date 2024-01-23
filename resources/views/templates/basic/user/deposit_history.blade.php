@@ -15,9 +15,8 @@
                         </a>
                         @endif
                     </div>
-                    <div class="table-responsive--md mt-4">
-
-                        <table id='data-table' class="table table-bordered data-table custom--table">
+                    <div class="mt-4">
+                        <table id='data-table' class="table table-bordered data-table custom--table responsive w-100 display">
                             <thead>
                                 <tr>
                                     <th>@lang('Transaction ID')</th>
@@ -60,6 +59,7 @@
         var table = $('#data-table').DataTable({
             processing: true,
             serverSide: true,
+            responsive: true,
             ajax: api ? decodeURIComponent("{{ route('iframe.api.deposit.history', ['api' => ':api','token'=>':token']) }}").replace(/:token|:api|&amp;/gm, (m) => (val[m] ?? m)) : "{{ route('user.deposit.history') }}",
             columns: [{
                     data: 'trx',

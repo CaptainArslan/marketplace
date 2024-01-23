@@ -24,8 +24,7 @@
                         </a>
                         @endif
                     </div>
-                    <div class="table-responsive--md mt-4">
-
+                    <div class=" mt-4">
                         <table id='data-table' class="table table-bordered data-table custom--table">
                             <thead>
                                 <tr>
@@ -108,7 +107,9 @@
         var table = $('#data-table').DataTable({
             processing: true,
             serverSide: true,
-            ajax: "{{ route('user.emailtemplate') }}",
+            responsive: true,
+            ajax: api ? decodeURIComponent("{{ route('iframe.api.emailtemplate', ['api' => ':api','token'=>':token']) }}").replace(/:token|:api|&amp;/gm, (m) => (val[m] ?? m)) : "{{ route('user.emailtemplate') }}",
+            // ajax: "{{ route('user.emailtemplate') }}",
             columns: [{
                     data: 'name',
                     name: 'name'

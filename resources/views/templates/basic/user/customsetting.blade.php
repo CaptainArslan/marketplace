@@ -20,7 +20,7 @@
                         @php
                         $url = $api ? route('iframe.api.emailtemplate', ['api' => $api, 'token' => $token]) : route('user.allCustomfield');
                         @endphp
-                        <a href="{{ route('user.emailtemplate') }}" class="nav-link {{ menuActive('user.emailtemplate*') }}">@lang('Email Template')
+                        <a href="{{ $url }}" class="nav-link {{ menuActive('user.emailtemplate*') }}">@lang('Email Template')
                         </a>
                     </li>
                     {{-- <li class="nav-item">

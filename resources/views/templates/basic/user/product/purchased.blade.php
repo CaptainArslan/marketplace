@@ -20,8 +20,8 @@ $nid = null;
         <div class="{{ $partial ? 'container' : 'container-fluid' }}">
             <div class="row">
                 <div class="col-lg-12">
-                    <div class="table-responsive--md mt-4">
-                        <table id='data-table' class="table table-bordered data-table custom--table">
+                    <div class="mt-4">
+                        <table id='data-table' class="table table-bordered data-table custom--table responsive w-100 display">
                             <thead>
                                 <tr>
                                     <th>@lang('Purchase Code')</th>
@@ -110,6 +110,7 @@ $nid = null;
         var table = $('#data-table').DataTable({
             processing: true,
             serverSide: true,
+            responsive: true,
             ajax: api ? decodeURIComponent("{{ route('iframe.api.purchased.product', ['api' => ':api','token'=>':token']) }}").replace(/:token|:api|&amp;/gm, (m) => (val[m] ?? m)) : "{{ route('user.purchased.product') }}",
             columns: [{
                     data: 'code',
