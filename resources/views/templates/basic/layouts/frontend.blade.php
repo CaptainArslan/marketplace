@@ -37,6 +37,10 @@
 
     <script src="https://kit.fontawesome.com/0bb027dfd0.js" crossorigin="anonymous"></script>
 
+    {{-- Sweetalet --}}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
     <!-- site color -->
     <link rel="stylesheet" href="{{ asset($activeTemplateTrue . 'css/color.php?color1=' . $general->base_color . '&color2=' . $general->secondary_color) }}">
 
@@ -331,7 +335,7 @@
     <script src="{{ asset($activeTemplateTrue . 'js/app.js') }}"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
     <!-- <script src="https://code.jquery.com/jquery-3.5.1.js"></script> -->
-    
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.0/jquery.validate.js"></script>
@@ -339,7 +343,7 @@
 
     <!-- <script src="https://cdn.datatables.net/1.11.4/js/jquery.dataTables.min.js"></script> -->
     <!-- <script src="https://cdn.datatables.net/1.13.3/js/jquery.dataTables.min.js"></script> -->
-    
+
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/rowreorder/1.4.1/js/dataTables.rowReorder.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
@@ -366,6 +370,23 @@
 
 
         })(jQuery);
+
+        function loadingStart(title = null) {
+            return new swal({
+                title: title ? title : "Loading",
+                allowEscapeKey: false,
+                allowOutsideClick: false,
+                onOpen: () => {
+                    swal.showLoading();
+                },
+            });
+        }
+
+        function loadingStop() {
+            swal.close();
+        }
+
+
     </script>
     <script>
         $('body').on('click', '.crossnotify', function(e) {

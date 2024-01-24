@@ -222,6 +222,7 @@ class ProductController extends Controller
             'tag.*' => 'required|max:255',
         ];
 
+        $general = GeneralSetting::first();
 
         $category = Category::where('status', 1)->findOrFail($request->category_id);
         $originalcategory = Category::where('name', 'like', "others")->first();
@@ -279,42 +280,42 @@ class ProductController extends Controller
             }
         }
 
-        $general = GeneralSetting::first();
+        // $general = GeneralSetting::first();
 
-        $pFile = '';
+        $pFile = $request->zip_file ?? '';
 
-        if ($request->hasFile('file')) {
-            $disk = $general->server;
-            $date = date('Y') . '/' . date('m') . '/' . date('d');
-            if ($disk == 'current') {
-                try {
-                    $location = imagePath()['p_file']['path'];
-                    $pFile = str_replace(' ', '_', strtolower($request->name)) . '_' . uniqid() . time() . '.zip';
-                    $request->file->move($location, $pFile);
-                } catch (\Exception $exp) {
-                    $notify[] = ['error', 'Could not upload the file'];
-                    return back()->withNotify($notify);
-                }
-                $server = 0;
-            } else {
-                try {
-                    $fileExtension  = $request->file('file')->getClientOriginalExtension();
-                    $file           = File::get($request->file);
-                    $location = 'FILES/' . $date;
+        // if ($request->hasFile('file')) {
+        //     $disk = $general->server;
+        //     $date = date('Y') . '/' . date('m') . '/' . date('d');
+        //     if ($disk == 'current') {
+        //         try {
+        //             $location = imagePath()['p_file']['path'];
+        //             $pFile = str_replace(' ', '_', strtolower($request->name)) . '_' . uniqid() . time() . '.zip';
+        //             $request->file->move($location, $pFile);
+        //         } catch (\Exception $exp) {
+        //             $notify[] = ['error', 'Could not upload the file'];
+        //             return back()->withNotify($notify);
+        //         }
+        //         $server = 0;
+        //     } else {
+        //         try {
+        //             $fileExtension  = $request->file('file')->getClientOriginalExtension();
+        //             $file           = File::get($request->file);
+        //             $location = 'FILES/' . $date;
 
-                    $responseValue = uploadRemoteFile($file, $location, $fileExtension, $disk);
+        //             $responseValue = uploadRemoteFile($file, $location, $fileExtension, $disk);
 
-                    if ($responseValue[0] == 'error') {
-                        return response()->json(['errors' => $responseValue[1]]);
-                    } else {
-                        $pFile = $responseValue[1];
-                    }
-                } catch (\Exception $e) {
-                    return response()->json(['errors' => 'Could not upload the Video']);
-                }
-                $server = 1;
-            }
-        }
+        //             if ($responseValue[0] == 'error') {
+        //                 return response()->json(['errors' => $responseValue[1]]);
+        //             } else {
+        //                 $pFile = $responseValue[1];
+        //             }
+        //         } catch (\Exception $e) {
+        //             return response()->json(['errors' => 'Could not upload the Video']);
+        //         }
+        //         $server = 1;
+        //     }
+        // }
 
         $pScreenshot = [];
 
@@ -339,9 +340,9 @@ class ProductController extends Controller
         $product->support_charge    = $request->support_charge ?? 0;
         $product->support_discount  = $request->support_discount ?? 0;
         $product->name              = $request->name;
-        $product->server            = $server ?? 0;
+        $product->server            = $request->pserver ?? 0;
         $product->image             = $pImage;
-        // $product->shareable_link             = $request->shearablelink ?? null;
+        $product->shareable_link             = $request->shearablelink ?? null;
         // $product->white_label_domain = $request->whitelabledomain ? $this->generateCustomShareableLink($$request->whitelabledomain, $$request->shearablelink):  null;
         if (empty($pFile) && is_null($request->sourcelink)) {
             $product->file = null;
@@ -417,7 +418,7 @@ class ProductController extends Controller
                 $productcf->save();
             }
         }
-        
+
         $notify[] = ['success', 'Product successfully submitted'];
         return redirect()->route('user.product.all')->withNotify($notify);
     }

@@ -385,13 +385,11 @@
                                                     <div class="row uploadDoc">
                                                         <div class="col-xxl-12 col-xl-12">
                                                             <div class="fileUpload btn btn-orange">
-                                                                <img src="{{ asset('assets/images/first.svg') }}"
-                                                                    class="icon">
-                                                                <span class="upl fs-12px"
-                                                                    id="upload">@lang('Upload')</span>
-                                                                <input type="file" class="upload up from--control"
-                                                                    name="file" value={{ $product->file }}
-                                                                    accept=".zip" onchange="fileURL(this);" />
+                                                                <img src="{{ asset('assets/images/first.svg') }}" class="icon">
+                                                                <span class="upl fs-12px" id="upload">@lang('Upload')</span>
+                                                                <input type="file" class="upload up from--control" name="file" value={{ $product->file }} accept=".zip" id="zip-upload" />
+                                                                <input type="hidden" class="from--control " name="zip_file" id="zip-file" value="" />
+                                                                <input type="hidden" class="from--control " name="pserver" id="server" value="0" />
                                                             </div>
                                                         </div>
                                                     </div>
@@ -569,7 +567,7 @@
         });
         function calcPrice(type='regular', event){
             let value = $(`.${type}-price`).val();
-           
+
             let buyerFee = $('.buyer-fee').val();
             let authorFee = "{{ auth()->user()->levell->product_charge }}";
             let finalValue = parseFloat(value) + parseInt(buyerFee);
@@ -737,6 +735,59 @@
                 }
             }
         }
+
+
+        $('#zip-upload').change(function(e) {
+        e.preventDefault();
+        fileURL(this);
+        var formData = new FormData();
+        var fileInput = $(this)[0];
+        var file = fileInput.files[0];
+        formData.append('file', file);
+        formData.append('_token', "{{ csrf_token() }}");
+        Swal.fire({
+            title: 'Uploading File',
+            html: '<div class="progress"><div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div></div><div class="progress-text">0%</div>',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            willOpen: () => {
+                $.ajax({
+                    type: 'POST',
+                    url: "{{ route('upload.zip') }}", // Replace with your actual route
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    xhr: function () {
+                        var xhr = new XMLHttpRequest();
+                        xhr.upload.addEventListener('progress', function (e) {
+                            if (e.lengthComputable) {
+                                var percentCompleted = Math.round((e.loaded * 100) / e.total);
+                                $('.progress-bar').css('width', percentCompleted + '%').attr('aria-valuenow', percentCompleted);
+                                $('.progress-text').text(percentCompleted + '%'); // Update the text with the percentage
+                            }
+                        }, false);
+                        return xhr;
+                    },
+                    success: function (response) {
+                        console.log(response);
+                        if(response.status){
+                            console.log(response.file);
+                            $('#zip-file').val(response.file);
+                            $('#server').val(response.server);
+                            $('.validate').val('').closest('.fileUpload').find(".icon").attr('src', `{{ asset('assets/images/first.svg') }}`);
+                            Swal.fire('Upload Complete', 'File has been uploaded successfully', 'success');
+                        }else{
+                            Swal.fire('Upload Failed', 'An error occurred while uploading the file', 'error');
+                        }
+                    },
+                    error: function (error) {
+                        Swal.fire('Upload Failed', 'An error occurred while uploading the file', 'error');
+                    }
+                });
+            }
+        });
+    });
 
         var fileTypesSS = ['jpg', 'jpeg', 'png'];
 

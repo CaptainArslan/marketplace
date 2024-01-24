@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use ZipArchive;
+use App\GeneralSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\File;
 
 class ZipController extends Controller
 {
@@ -63,5 +65,51 @@ class ZipController extends Controller
         // Storage::disk('public')->delete($uploadedFilePath);
 
         return back()->withNotify(['error', 'Failed to extract the zip file.']);
+    }
+
+
+    function uploadZip(Request $request)
+    {
+        try {
+            $server = 0;
+            $pFile = '';
+            $general = GeneralSetting::first();
+            if ($request->hasFile('file')) {
+                $disk = $general->server;
+                $date = date('Y') . '/' . date('m') . '/' . date('d');
+                if ($disk == 'current') {
+                    try {
+                        $location = imagePath()['p_file']['path'];
+                        $pFile = str_replace(' ', '_', strtolower($request->name)) . '_' . uniqid() . time() . '.zip';
+                        $request->file->move($location, $pFile);
+                    } catch (\Exception $exp) {
+                        $notify[] = ['error', 'Could not upload the file'];
+                        return back()->withNotify($notify);
+                    }
+                    $server = 0;
+                } else {
+                    try {
+                        $fileExtension  = $request->file('file')->getClientOriginalExtension();
+                        $file           = File::get($request->file);
+                        $location = 'FILES/' . $date;
+
+                        $responseValue = uploadRemoteFile($file, $location, $fileExtension, $disk);
+
+                        if ($responseValue[0] == 'error') {
+                            return response()->json(['errors' => $responseValue[1]]);
+                        } else {
+                            $pFile = $responseValue[1];
+                        }
+                    } catch (\Exception $e) {
+                        return response()->json(['errors' => 'Could not upload the Video']);
+                    }
+                    $server = 1;
+                }
+
+                return response()->json(['status' => true, 'message' => 'File Uploaded Successfully', 'file' => $pFile, 'server' => $server]);
+            }
+        } catch (\Throwable $th) {
+            return response()->json(['status' => false, 'message' => 'Error occurred while uploading file']);
+        }
     }
 }

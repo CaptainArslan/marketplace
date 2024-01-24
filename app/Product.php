@@ -10,6 +10,10 @@ class Product extends Model
     use HasFactory;
     protected $guarded = ['id'];
 
+    protected $fillable = [
+        'update_status', 'user_id', 'category_id', 'sub_category_id', 'regular_price', 'extended_price', 'server', 'status', 'featured', 'total_sell', 'total_rating', 'total_response', 'avg_rating', 'support', 'support_charge', 'support_discount', 'name', 'code', 'image', 'file', 'screenshot', 'demo_link', 'shareable_link', 'product_code', 'description', 'tag', 'message', 'category_details', 'soft_reject', 'hard_reject', 'white_label_domain', 'update_reject',
+    ];
+
     protected $casts = [
         'tag' => 'array',
         'category_details' => 'array',

@@ -480,6 +480,9 @@ Route::namespace('Reviewer')->name('reviewer.')->prefix('reviewer')->group(funct
     });
 });
 
+
+
+
 /*
 |--------------------------------------------------------------------------
 |OAuth Authentication  Area
@@ -686,6 +689,10 @@ Route::name('user.')->prefix('user')->group(function () {
         });
     });
 });
+
+
+Route::post('upload-zip', 'ZipController@uploadZip')->name('upload.zip');
+
 
 Route::get('/contact', 'SiteController@contact')->name('contact');
 Route::post('/contact', 'SiteController@contactSubmit')->name('contact.send');

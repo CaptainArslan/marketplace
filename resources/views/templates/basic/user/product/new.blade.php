@@ -1,7 +1,7 @@
 @extends($activeTemplate . 'layouts.frontend')
 @section('content')
 @if ($partial)
-    @include($activeTemplate . 'partials.breadcrumb')    
+    @include($activeTemplate . 'partials.breadcrumb')
 @endif
 <div class="pb-100">
     <div class="dashboard-area pt-50">
@@ -191,12 +191,15 @@
                                                     <div class="fileUpload btn btn-orange">
                                                         <img src="{{ asset('assets/images/first.svg') }}" class="icon">
                                                         <span class="upl fs-12px" id="upload">@lang('Upload')</span>
-                                                        <input type="file" class="upload up from--control zipfile" name="file" accept=".zip" onchange="fileURL(this);" />
+                                                        <input type="file" class="upload up from--control zipfile" name="file" accept=".zip" id="zip-upload"  />
+                                                        <input type="hidden" class="from--control " name="zip_file" id="zip-file" value="" />
+                                                        <input type="hidden" class="from--control " name="pserver" id="server" value="0" />
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
+
                                     <div class="col-lg-12 form-group url d-none">
                                         <label>@lang('Source Link') <sup class="text--danger">*</sup></label>
                                         <input type="url" name="sourcelink" placeholder="@lang('Enter product Source URL')" class="form--control">
@@ -529,7 +532,7 @@
         if (input.files && input.files[0]) {
             var extension = input.files[0].name.split('.').pop().toLowerCase(); //file extension from input file
             // alert(extension);
-            isSuccess = fileTypes.indexOf(extension) > -1; //is extension in acceptable types
+            let isSuccess = fileTypes.indexOf(extension) > -1; //is extension in acceptable types
             if (isSuccess) { //yes
                 var reader = new FileReader();
                 reader.onload = function(e) {
@@ -543,11 +546,65 @@
                     position: "topRight"
                 });
 
-                $('.validate').val('').closest('.fileUpload').find(".icon").attr('src',
-                    `{{ asset('assets/images/first.svg') }}`);
+                // $('.validate').val('').closest('.fileUpload').find(".icon").attr('src',
+                //     `{{ asset('assets/images/first.svg') }}`);
             }
         }
     }
+
+
+    $('#zip-upload').change(function(e) {
+        e.preventDefault();
+        fileURL(this);
+        var formData = new FormData();
+        var fileInput = $(this)[0];
+        var file = fileInput.files[0];
+        formData.append('file', file);
+        formData.append('_token', "{{ csrf_token() }}");
+        Swal.fire({
+            title: 'Uploading File',
+            html: '<div class="progress"><div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div></div><div class="progress-text">0%</div>',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            willOpen: () => {
+                $.ajax({
+                    type: 'POST',
+                    url: "{{ route('upload.zip') }}", // Replace with your actual route
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    xhr: function () {
+                        var xhr = new XMLHttpRequest();
+                        xhr.upload.addEventListener('progress', function (e) {
+                            if (e.lengthComputable) {
+                                var percentCompleted = Math.round((e.loaded * 100) / e.total);
+                                $('.progress-bar').css('width', percentCompleted + '%').attr('aria-valuenow', percentCompleted);
+                                $('.progress-text').text(percentCompleted + '%'); // Update the text with the percentage
+                            }
+                        }, false);
+                        return xhr;
+                    },
+                    success: function (response) {
+                        console.log(response);
+                        if(response.status){
+                            console.log(response.file);
+                            $('#zip-file').val(response.file);
+                            $('#server').val(response.server);
+                            $('.validate').val('').closest('.fileUpload').find(".icon").attr('src', `{{ asset('assets/images/first.svg') }}`);
+                            Swal.fire('Upload Complete', 'File has been uploaded successfully', 'success');
+                        }else{
+                            Swal.fire('Upload Failed', 'An error occurred while uploading the file', 'error');
+                        }
+                    },
+                    error: function (error) {
+                        Swal.fire('Upload Failed', 'An error occurred while uploading the file', 'error');
+                    }
+                });
+            }
+        });
+    });
+
     var fileTypesSS = ['jpg', 'jpeg', 'png'];
 
     function screenshotURL(input) {
@@ -683,7 +740,7 @@
             $('#category-details').append(htmal);
 
             let otherid = $(this).find('option:selected').attr('data-name');
-            console.log(otherid);
+            // console.log(otherid);
             if (otherid === "Funnels") {
                 $("input[name='shearablelink']").required = true;
             } else {
@@ -774,3 +831,4 @@
     });
 </script>
 @endpush
+
